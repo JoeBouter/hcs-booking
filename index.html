@@ -4,47 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HCS Classroom Booking</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; margin: 0; background: #f0f2f5; color: #333; }
-    header { background-color: #2d3e50; color: white; padding: 20px; text-align: center; }
-    nav { background: #e9ecef; padding: 10px 20px; text-align: center; }
-    nav a { margin: 0 10px; color: #2d3e50; font-weight: bold; text-decoration: none; }
-    nav a:hover { text-decoration: underline; }
-    main { max-width: 800px; margin: auto; padding: 20px; }
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .hidden { display: none; }
+    button { padding: 10px 15px; background: #2d3e50; color: white; border: none; border-radius: 5px; }
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
     .day { background: white; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-height: 80px; }
-    .btn { padding: 10px 15px; background: #2d3e50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .btn:hover { background: #1b2838; }
-    select, input[type="text"], input[type="date"] {
-      width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc;
-    }
-    .admin-section {
-      background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin-top: 20px; border-radius: 6px;
-    }
-    #authPanel { text-align: center; margin-top: 80px; }
-    #loginBtn, #logoutBtn {
-      background: #de5246; color: white; border: none; padding: 10px 20px;
-      font-size: 16px; border-radius: 6px; cursor: pointer;
-    }
-    #loginBtn:hover, #logoutBtn:hover { background: #c14438; }
   </style>
 </head>
 <body>
 
-<!-- LOGIN PANEL -->
+<!-- Login Panel -->
 <div id="authPanel">
-  <h2>HCS Classroom Booking</h2>
+  <h2>Welcome to HCS Booking</h2>
   <button id="loginBtn">Sign in with Google</button>
 </div>
 
-<!-- MAIN APP PANEL -->
-<div id="appPanel" style="display:none;">
-  <header>
-    <h1>Hamilton Christian School – Classroom Booking</h1>
-    <p id="userInfo"></p>
-    <button id="logoutBtn">Log out</button>
-  </header>
+<!-- App Panel -->
+<div id="appPanel" class="hidden">
+  <h2>Classroom Booking</h2>
+  <p id="userInfo"></p>
+  <button id="logoutBtn">Log out</button>
 
   <nav>
     <a href="#home">Home</a>
@@ -52,15 +32,13 @@
     <a href="#admin">Admin Panel</a>
   </nav>
 
-  <!-- Home Calendar -->
   <main id="home">
-    <h2>Bookings This Month</h2>
+    <h3>Bookings Calendar</h3>
     <div class="calendar-grid" id="calendarGrid"></div>
   </main>
 
-  <!-- Booking Form -->
   <main id="bookings" style="display:none;">
-    <h2>Book a Classroom</h2>
+    <h3>Book a Classroom</h3>
     <form id="bookingForm">
       <label>Date:</label>
       <input type="date" id="date" required>
@@ -76,33 +54,26 @@
       </select>
       <label>Your Name:</label>
       <input type="text" id="teacher" required>
-      <button class="btn" type="submit">Submit Booking</button>
+      <button type="submit">Submit Booking</button>
     </form>
   </main>
 
-  <!-- Admin Panel -->
   <main id="admin" style="display:none;">
-    <h2>Admin Panel</h2>
-    <div class="admin-section">
-      <h3>Pending Approvals</h3>
-      <ul id="pendingList"></ul>
-    </div>
-    <div class="admin-section">
-      <h3>Manage Rooms</h3>
-      <input type="text" id="newRoomName" placeholder="e.g. E5" />
-      <button class="btn" onclick="addRoom()">Add Room</button>
-      <ul id="roomList"></ul>
-    </div>
+    <h3>Pending Approvals</h3>
+    <ul id="pendingList"></ul>
+
+    <h3>Manage Rooms</h3>
+    <input type="text" id="newRoomName" placeholder="e.g. E5" />
+    <button onclick="addRoom()">Add Room</button>
+    <ul id="roomList"></ul>
   </main>
 </div>
 
-<!-- SCRIPT -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
   import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-  // Your Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyBhl57b8ncjZkca9vxWng79AUuPq5WnO00",
     authDomain: "hcs-booking.firebaseapp.com",
@@ -113,7 +84,6 @@
     measurementId: "G-ZF0LMCXME5"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
   const auth = getAuth(app);
@@ -125,49 +95,120 @@
   const appPanel = document.getElementById('appPanel');
   const userInfo = document.getElementById('userInfo');
 
+  const rooms = ['B1', 'B2', 'C1', 'Library'];
+  const bookings = [];
+  const pending = [];
+
+  // ROOM AND CALENDAR FUNCTIONS
+  function populateRooms() {
+    const roomSelect = document.getElementById('room');
+    roomSelect.innerHTML = '';
+    rooms.forEach(room => {
+      const option = document.createElement('option');
+      option.value = room;
+      option.textContent = room;
+      roomSelect.appendChild(option);
+    });
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= 30; i++) {
+      const date = `2025-05-${i.toString().padStart(2, '0')}`;
+      const todayBookings = bookings.filter(b => b.date === date);
+      const div = document.createElement('div');
+      div.className = 'day';
+      div.innerHTML = `<strong>May ${i}</strong><br>` +
+        (todayBookings.length ? todayBookings.map(b => `${b.room} – ${b.period} – ${b.teacher}`).join('<br>') : 'No bookings');
+      grid.appendChild(div);
+    }
+  }
+
+  function renderRoomList() {
+    const list = document.getElementById('roomList');
+    list.innerHTML = '';
+    rooms.forEach((room, index) => {
+      const li = document.createElement('li');
+      li.innerHTML = `${room} <button onclick="deleteRoom(${index})">Delete</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  window.addRoom = function() {
+    const name = document.getElementById('newRoomName').value.trim();
+    if (name && !rooms.includes(name)) {
+      rooms.push(name);
+      populateRooms();
+      renderRoomList();
+      renderCalendar();
+      alert(`Room "${name}" added.`);
+    }
+    document.getElementById('newRoomName').value = '';
+  };
+
+  window.deleteRoom = function(index) {
+    const roomToDelete = rooms[index];
+    if (confirm(`Delete room "${roomToDelete}" and its bookings?`)) {
+      rooms.splice(index, 1);
+      for (let i = bookings.length - 1; i >= 0; i--) if (bookings[i].room === roomToDelete) bookings.splice(i, 1);
+      for (let i = pending.length - 1; i >= 0; i--) if (pending[i].room === roomToDelete) pending.splice(i, 1);
+      populateRooms();
+      renderRoomList();
+      renderCalendar();
+      renderPending();
+    }
+  };
+
+  function renderPending() {
+    const list = document.getElementById('pendingList');
+    list.innerHTML = '';
+    pending.forEach((b, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `${b.date} – ${b.room} – ${b.period} – ${b.teacher} 
+        <button onclick="approve(${i})">Approve</button> 
+        <button onclick="decline(${i})">Decline</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  window.approve = function(i) {
+    bookings.push(pending.splice(i, 1)[0]);
+    renderPending();
+    renderCalendar();
+  };
+
+  window.decline = function(i) {
+    pending.splice(i, 1);
+    renderPending();
+  };
+
+  document.getElementById('bookingForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const date = document.getElementById('date').value;
+    const room = document.getElementById('room').value;
+    const period = document.getElementById('period').value;
+    const teacher = document.getElementById('teacher').value;
+    pending.push({ date, room, period, teacher });
+    renderPending();
+    alert('Booking submitted for approval.');
+    e.target.reset();
+  });
+
+  // NAVIGATION
+  document.querySelectorAll('nav a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = link.getAttribute('href').substring(1);
+      document.querySelectorAll('main').forEach(m => m.style.display = 'none');
+      document.getElementById(target).style.display = 'block';
+    });
+  });
+
+  // --- LOGIN AND REDIRECT FIX ---
   document.addEventListener('DOMContentLoaded', () => {
     console.log("Page loaded");
 
-    // --- Process the redirect result FIRST ---
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result && result.user) {
-          console.log("Redirect sign-in successful:", result.user);
-          // Do nothing here. onAuthStateChanged will update the UI.
-        } else {
-          console.log("No redirect result.");
-        }
-
-        // Now, AFTER processing the redirect, set up the auth state listener.
-        setupAuthStateListener();
-
-      })
-      .catch((error) => {
-        console.error("Redirect error:", error);
-        alert("Redirect failed: " + error.message);
-        setupAuthStateListener(); // Still set up the listener even if redirect fails.
-      });
-
-    // --- Function to set up the state listener ---
-    function setupAuthStateListener() {
-      onAuthStateChanged(auth, (user) => {
-        console.log("Auth state changed. User:", user);
-
-        if (user) {
-          // User signed in
-          authPanel.classList.add("hidden");
-          appPanel.classList.remove("hidden");
-          userInfo.textContent = `Logged in as ${user.displayName} (${user.email})`;
-        } else {
-          // User signed out
-          authPanel.classList.remove("hidden");
-          appPanel.classList.add("hidden");
-          userInfo.textContent = "";
-        }
-      });
-    }
-
-    // --- Button click handlers ---
     loginBtn.onclick = () => {
       console.log("Signing in...");
       signInWithRedirect(auth, provider);
@@ -178,7 +219,46 @@
       signOut(auth);
     };
 
-  }); // End DOMContentLoaded
+    // Process redirect result FIRST
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          console.log("Redirect sign-in successful:", result.user);
+        } else {
+          console.log("No redirect result.");
+        }
+        setupAuthStateListener();
+      })
+      .catch((error) => {
+        console.error("Redirect error:", error);
+        alert("Redirect failed: " + error.message);
+        setupAuthStateListener();
+      });
+
+    function setupAuthStateListener() {
+      onAuthStateChanged(auth, (user) => {
+        console.log("Auth state changed. User:", user);
+        if (user) {
+          const role = "admin"; // For now, hardcoded
+          authPanel.classList.add("hidden");
+          appPanel.classList.remove("hidden");
+          userInfo.textContent = `Logged in as ${user.displayName} (${role})`;
+          document.getElementById('admin').style.display = role === 'admin' ? 'block' : 'none';
+          document.getElementById('bookings').style.display = (role === 'admin' || role === 'teacher') ? 'block' : 'none';
+          document.getElementById('home').style.display = 'block';
+        } else {
+          authPanel.classList.remove("hidden");
+          appPanel.classList.add("hidden");
+          userInfo.textContent = "";
+        }
+      });
+    }
+
+    // INIT
+    populateRooms();
+    renderRoomList();
+    renderCalendar();
+  });
 </script>
 </body>
 </html>
