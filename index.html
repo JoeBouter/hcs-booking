@@ -99,180 +99,86 @@
 <!-- SCRIPT -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import {
-    getAuth, GoogleAuthProvider,
-    signInWithRedirect, getRedirectResult,
-    signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+  // Your Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhl57b8ncjZkca9vxWng79AUuPq5WnO00",
+    authDomain: "hcs-booking.firebaseapp.com",
+    projectId: "hcs-booking",
+    storageBucket: "hcs-booking.firebasestorage.app",
+    messagingSenderId: "923003673274",
+    appId: "1:923003673274:web:3fdbe3bd24775226ee4083",
+    measurementId: "G-ZF0LMCXME5"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const authPanel = document.getElementById('authPanel');
+  const appPanel = document.getElementById('appPanel');
+  const userInfo = document.getElementById('userInfo');
 
   document.addEventListener('DOMContentLoaded', () => {
-    console.log("Page loaded. Setting up Firebase...");
+    console.log("Page loaded");
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBhl57b8ncjZkca9vxWng79AUuPq5WnO00",
-      authDomain: "hcs-booking.firebaseapp.com",
-      projectId: "hcs-booking",
-      storageBucket: "hcs-booking.firebasestorage.app",
-      messagingSenderId: "923003673274",
-      appId: "1:923003673274:web:3fdbe3bd24775226ee4083",
-      measurementId: "G-ZF0LMCXME5"
-    };
+    // --- Process the redirect result FIRST ---
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          console.log("Redirect sign-in successful:", result.user);
+          // Do nothing here. onAuthStateChanged will update the UI.
+        } else {
+          console.log("No redirect result.");
+        }
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+        // Now, AFTER processing the redirect, set up the auth state listener.
+        setupAuthStateListener();
 
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const userInfo = document.getElementById('userInfo');
+      })
+      .catch((error) => {
+        console.error("Redirect error:", error);
+        alert("Redirect failed: " + error.message);
+        setupAuthStateListener(); // Still set up the listener even if redirect fails.
+      });
 
-    const rooms = ['B1', 'B2', 'C1', 'Library'];
-    const bookings = [];
-    const pending = [];
+    // --- Function to set up the state listener ---
+    function setupAuthStateListener() {
+      onAuthStateChanged(auth, (user) => {
+        console.log("Auth state changed. User:", user);
 
+        if (user) {
+          // User signed in
+          authPanel.classList.add("hidden");
+          appPanel.classList.remove("hidden");
+          userInfo.textContent = `Logged in as ${user.displayName} (${user.email})`;
+        } else {
+          // User signed out
+          authPanel.classList.remove("hidden");
+          appPanel.classList.add("hidden");
+          userInfo.textContent = "";
+        }
+      });
+    }
+
+    // --- Button click handlers ---
     loginBtn.onclick = () => {
-      console.log("Redirecting to Google sign-in...");
+      console.log("Signing in...");
       signInWithRedirect(auth, provider);
     };
-    logoutBtn.onclick = () => signOut(auth);
 
-    // Catch any errors during redirect
-    getRedirectResult(auth)
-      .then(result => {
-        if (result?.user) {
-          console.log("Redirect result user:", result.user);
-        } else {
-          console.log("No redirect result. Waiting for auth state...");
-        }
-      })
-      .catch(err => alert("Redirect error: " + err.message));
-
-    // Auth listener
-    onAuthStateChanged(auth, async (user) => {
-      console.log("Auth state changed.");
-      console.log("User is:", user);
-
-      if (user) {
-        const role = "admin"; // Hardcoded until Firestore is ready
-        userInfo.textContent = `Logged in as ${user.displayName} (${role})`;
-        document.getElementById('authPanel').style.display = 'none';
-        document.getElementById('appPanel').style.display = 'block';
-
-        document.getElementById('admin').style.display = role === 'admin' ? 'block' : 'none';
-        document.getElementById('bookings').style.display = (role === 'admin' || role === 'teacher') ? 'block' : 'none';
-        document.getElementById('home').style.display = 'block';
-      } else {
-        document.getElementById('authPanel').style.display = 'block';
-        document.getElementById('appPanel').style.display = 'none';
-      }
-    });
-
-    // ROOM + BOOKING LOGIC
-    function populateRooms() {
-      const roomSelect = document.getElementById('room');
-      roomSelect.innerHTML = '';
-      rooms.forEach(room => {
-        const option = document.createElement('option');
-        option.value = room;
-        option.textContent = room;
-        roomSelect.appendChild(option);
-      });
-    }
-
-    function renderCalendar() {
-      const grid = document.getElementById('calendarGrid');
-      grid.innerHTML = '';
-      for (let i = 1; i <= 30; i++) {
-        const date = `2025-05-${i.toString().padStart(2, '0')}`;
-        const todayBookings = bookings.filter(b => b.date === date);
-        const div = document.createElement('div');
-        div.className = 'day';
-        div.innerHTML = `<strong>May ${i}</strong><br>` +
-          (todayBookings.length ? todayBookings.map(b => `${b.room} – ${b.period} – ${b.teacher}`).join('<br>') : 'No bookings');
-        grid.appendChild(div);
-      }
-    }
-
-    function renderRoomList() {
-      const list = document.getElementById('roomList');
-      list.innerHTML = '';
-      rooms.forEach((room, index) => {
-        const li = document.createElement('li');
-        li.innerHTML = `${room} <button onclick="deleteRoom(${index})">Delete</button>`;
-        list.appendChild(li);
-      });
-    }
-
-    window.addRoom = function() {
-      const name = document.getElementById('newRoomName').value.trim();
-      if (name && !rooms.includes(name)) {
-        rooms.push(name);
-        populateRooms();
-        renderRoomList();
-        renderCalendar();
-        alert(`Room "${name}" added.`);
-      }
-      document.getElementById('newRoomName').value = '';
+    logoutBtn.onclick = () => {
+      console.log("Signing out...");
+      signOut(auth);
     };
 
-    window.deleteRoom = function(index) {
-      const roomToDelete = rooms[index];
-      if (confirm(`Delete room "${roomToDelete}" and its bookings?`)) {
-        rooms.splice(index, 1);
-        for (let i = bookings.length - 1; i >= 0; i--) if (bookings[i].room === roomToDelete) bookings.splice(i, 1);
-        for (let i = pending.length - 1; i >= 0; i--) if (pending[i].room === roomToDelete) pending.splice(i, 1);
-        populateRooms(); renderRoomList(); renderCalendar(); renderPending();
-      }
-    };
-
-    function renderPending() {
-      const list = document.getElementById('pendingList');
-      list.innerHTML = '';
-      pending.forEach((b, i) => {
-        const li = document.createElement('li');
-        li.innerHTML = `${b.date} – ${b.room} – ${b.period} – ${b.teacher} 
-          <button onclick="approve(${i})">Approve</button> 
-          <button onclick="decline(${i})">Decline</button>`;
-        list.appendChild(li);
-      });
-    }
-
-    window.approve = function(i) {
-      bookings.push(pending.splice(i, 1)[0]);
-      renderPending(); renderCalendar();
-    };
-
-    window.decline = function(i) {
-      pending.splice(i, 1);
-      renderPending();
-    };
-
-    document.getElementById('bookingForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const date = document.getElementById('date').value;
-      const room = document.getElementById('room').value;
-      const period = document.getElementById('period').value;
-      const teacher = document.getElementById('teacher').value;
-      pending.push({ date, room, period, teacher });
-      renderPending();
-      alert('Booking submitted for approval.');
-      e.target.reset();
-    });
-
-    document.querySelectorAll('nav a').forEach(link => {
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        const target = link.getAttribute('href').substring(1);
-        document.querySelectorAll('main').forEach(m => m.style.display = 'none');
-        document.getElementById(target).style.display = 'block';
-      });
-    });
-
-    // INIT UI
-    populateRooms();
-    renderRoomList();
-    renderCalendar();
-  });
+  }); // End DOMContentLoaded
 </script>
 </body>
 </html>
