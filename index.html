@@ -1,360 +1,381 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Classroom Booking System V3</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Booking System</title>
+    <style>
+        /* ======== STYLE SECTION ======== */
 
-<!-- ========== STYLES ========== -->
-<style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  h2 { margin-top: 20px; }
-  .hidden { display: none; }
-  button { margin: 5px; padding: 8px 15px; }
-  input, select, textarea { margin: 5px; padding: 5px; }
-  .admin-section { border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
-  .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-  .day { border: 1px solid #999; padding: 5px; min-height: 60px; }
-</style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: var(--siteColor, #4CAF50);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        nav {
+            display: flex;
+            background-color: #ddd;
+            justify-content: center;
+        }
+
+        nav button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #ccc;
+            margin: 2px;
+            cursor: pointer;
+        }
+
+        nav button.active {
+            background-color: var(--siteColor, #4CAF50);
+            color: white;
+        }
+
+        section {
+            display: none;
+            padding: 20px;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        button, input[type="submit"] {
+            padding: 8px 15px;
+            margin: 5px 0;
+            background-color: var(--siteColor, #4CAF50);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        input, textarea {
+            padding: 5px;
+            margin: 5px 0;
+            width: 300px;
+            max-width: 90%;
+        }
+
+        hr {
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
 
-<h1>Classroom Booking System</h1>
+<!-- ======== HEADER ======== -->
+<header>
+    <h1>Classroom Booking System</h1>
+</header>
 
-<!-- ================= LOGIN SCREEN ================= -->
-<div id="loginScreen">
-  <h2>Login</h2>
-  <input type="text" id="loginUsername" placeholder="Username"><br>
-  <input type="password" id="loginPassword" placeholder="Password"><br>
-  <button onclick="login()">Login</button>
-  <button onclick="showRegister()">Register New Site</button>
-</div>
+<!-- ======== NAVIGATION ======== -->
+<nav id="navBar">
+    <button onclick="showTab('loginTab')" id="loginTabBtn">Login</button>
+    <button onclick="showTab('registerTab')" id="registerTabBtn">Register</button>
+    <button onclick="showTab('appTab')" id="appTabBtn" style="display:none;">App</button>
+</nav>
 
-<!-- ================= REGISTER SCREEN ================= -->
-<div id="registerScreen" class="hidden">
-  <h2>Register New Site</h2>
-  <input type="text" id="registerSite" placeholder="Site Name"><br>
-  <input type="text" id="registerUsername" placeholder="Admin Username"><br>
-  <input type="password" id="registerPassword" placeholder="Password"><br>
-  <button onclick="register()">Register</button>
-</div>
+<!-- ======== LOGIN SCREEN ======== -->
+<section id="loginTab" class="active">
+    <h2>Login</h2>
+    <input type="text" id="loginUsername" placeholder="Username"><br>
+    <input type="password" id="loginPassword" placeholder="Password"><br>
+    <button onclick="login()">Login</button><br>
+    <button onclick="showTab('registerTab')">Register New Site</button>
+</section>
 
-<!-- ================= MAIN APP ================= -->
-<div id="appScreen" class="hidden">
-  <h2>Welcome, <span id="currentUser"></span></h2>
-  <button onclick="logout()">Logout</button>
+<!-- ======== REGISTER SCREEN ======== -->
+<section id="registerTab">
+    <h2>Register New Site</h2>
+    <input type="text" id="registerSite" placeholder="Site Name"><br>
+    <input type="text" id="registerUsername" placeholder="Admin Username"><br>
+    <input type="password" id="registerPassword" placeholder="Password"><br>
+    <button onclick="register()">Register</button>
+</section>
 
-  <!-- ===== ADMIN PANEL ===== -->
-  <div id="adminPanel" class="hidden">
-    <h3>Admin Panel</h3>
-    <button onclick="exportData()">Export Data</button>
-    <input type="file" id="importFile" onchange="importData(event)">
+<!-- ======== MAIN APP SCREEN ======== -->
+<section id="appTab">
+    <h2>Welcome, <span id="currentUser"></span></h2>
+    <button onclick="logout()">Logout</button>
     <hr>
 
-    <!-- Create Room -->
-    <div class="admin-section">
-      <h4>Create Room</h4>
-      <input type="text" id="newRoomName" placeholder="Room name">
-      <button onclick="createRoom()">Add Room</button>
-      <ul id="roomList"></ul>
+    <!-- Admin Panel -->
+    <div id="adminPanel" style="display:none;">
+        <h3>Admin Panel</h3>
+
+        <!-- Export / Import -->
+        <button onclick="exportData()">Export Data</button>
+        <input type="file" onchange="importData(event)"><br><br>
+
+        <!-- Change Site Color -->
+        <h4>Site Color</h4>
+        <input type="color" id="siteColorPicker" value="#4CAF50" onchange="changeSiteColor()">
+        <br><br>
+
+        <!-- Create Room -->
+        <h4>Create Room</h4>
+        <input type="text" id="newRoomName" placeholder="Room name">
+        <button onclick="addRoom()">Add Room</button>
+        <ul id="roomList"></ul>
+        <br>
+
+        <!-- Bulk User Creation -->
+        <h4>Bulk User Creation</h4>
+        <textarea id="bulkUserInput" rows="4" placeholder="Format: S,username,password, T,username,password, A,username,password"></textarea><br>
+        <button onclick="createUsers()">Create Users</button>
     </div>
 
-    <!-- Bulk User Creation -->
-    <div class="admin-section">
-      <h4>Bulk User Creation</h4>
-      <textarea id="bulkUsers" rows="4" cols="50" placeholder="Format: S,username,password, T,username,password, A,username,password"></textarea><br>
-      <button onclick="bulkCreate()">Create Users</button>
-      <ul id="userList"></ul>
-    </div>
+    <hr>
 
-    <!-- Pending Bookings -->
-    <div class="admin-section">
-      <h4>Pending Bookings</h4>
-      <ul id="pendingList"></ul>
-    </div>
-  </div>
-
-  <!-- ===== TEACHER PANEL ===== -->
-  <div id="teacherPanel" class="hidden">
+    <!-- Room Booking -->
     <h3>Book a Room</h3>
-    <input type="date" id="bookingDate">
-    <select id="bookingRoom"></select>
-    <input type="text" id="bookingPeriod" placeholder="Period">
-    <button onclick="requestBooking()">Request Booking</button>
-  </div>
+    <input type="date" id="date"><br>
+    <select id="room"></select><br>
+    <select id="period">
+        <option>Period 1</option>
+        <option>Period 2</option>
+        <option>Period 3</option>
+        <option>Lunch</option>
+        <option>Period 4</option>
+    </select><br>
+    <button onclick="book()">Submit Booking</button>
 
-  <!-- ===== CALENDAR ===== -->
-  <div id="calendarSection">
-    <h3>Calendar</h3>
-    <div class="calendar" id="calendar"></div>
-  </div>
-</div>
+    <ul id="pendingList"></ul>
 
-<!-- ================= SCRIPT ================= -->
+    <hr>
+
+    <!-- Calendar -->
+    <h3>Booking Calendar</h3>
+    <div id="calendar"></div>
+</section>
+
+<!-- ======== JAVASCRIPT ======== -->
 <script>
-/*
-=====================
- LOCAL STORAGE SYSTEM
-=====================
-Stores all data per "site".
-Each site has:
-- users
-- rooms
-- bookings
-- pending bookings
-
-Future note:
-SERVER INTEGRATION START/END areas are marked 
-for adding server-side data syncing later.
-*/
-
-let data = JSON.parse(localStorage.getItem('bookingData')) || {};
-
+/* ======= DATA STRUCTURES ======= */
+let sites = JSON.parse(localStorage.getItem('bookingSites')) || {};
 let currentSite = null;
 let currentUser = null;
 
-/* =======================
- LOGIN / REGISTER FUNCTIONS
-======================= */
-
-function login() {
-  const username = document.getElementById('loginUsername').value;
-  const password = document.getElementById('loginPassword').value;
-
-  for (const site in data) {
-    const users = data[site].users || {};
-    if (users[username] && users[username].password === password) {
-      currentSite = site;
-      currentUser = username;
-      loadApp();
-      return;
-    }
-  }
-  alert("Invalid login.");
+/* ======= TABBED NAVIGATION ======= */
+function showTab(tab) {
+    ['loginTab', 'registerTab', 'appTab'].forEach(id => {
+        document.getElementById(id).classList.remove('active');
+    });
+    document.getElementById(tab).classList.add('active');
+    // Update nav button styles
+    ['loginTabBtn', 'registerTabBtn', 'appTabBtn'].forEach(btn => {
+        document.getElementById(btn).classList.remove('active');
+    });
+    if(tab === 'loginTab') document.getElementById('loginTabBtn').classList.add('active');
+    if(tab === 'registerTab') document.getElementById('registerTabBtn').classList.add('active');
+    if(tab === 'appTab') document.getElementById('appTabBtn').classList.add('active');
 }
 
-function showRegister() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('registerScreen').classList.remove('hidden');
-}
-
+/* ======= REGISTER ======= */
 function register() {
-  const site = document.getElementById('registerSite').value;
-  const username = document.getElementById('registerUsername').value;
-  const password = document.getElementById('registerPassword').value;
+    const site = document.getElementById('registerSite').value.trim();
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
 
-  if (data[site]) {
-    alert("Site already exists.");
-    return;
-  }
+    if (!site || !username || !password) return alert("All fields are required.");
+    if (sites[site]) return alert("Site already exists.");
 
-  data[site] = {
-    users: { [username]: { password: password, role: "admin" } },
-    rooms: [],
-    bookings: [],
-    pending: []
-  };
-
-  saveData();
-  currentSite = site;
-  currentUser = username;
-  loadApp();
+    sites[site] = {
+        users: { [username]: { password, role: 'admin' } },
+        bookings: [],
+        rooms: [],
+        siteColor: "#4CAF50"
+    };
+    saveSites();
+    alert("Site registered.");
+    showTab('loginTab');
 }
 
-/* =======================
- APP LOAD / LOGOUT
-======================= */
+/* ======= LOGIN ======= */
+function login() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
 
-function loadApp() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('registerScreen').classList.add('hidden');
-  document.getElementById('appScreen').classList.remove('hidden');
-
-  const role = data[currentSite].users[currentUser].role;
-  document.getElementById('currentUser').innerText = `${currentUser} (${role})`;
-
-  showPanels();
-  renderRooms();
-  renderUsers();
-  renderPending();
-  renderCalendar();
-}
-
-function logout() {
-  currentSite = null;
-  currentUser = null;
-  document.getElementById('appScreen').classList.add('hidden');
-  document.getElementById('loginScreen').classList.remove('hidden');
-}
-
-/* =======================
- PANEL DISPLAY
-======================= */
-
-function showPanels() {
-  const role = data[currentSite].users[currentUser].role;
-  document.getElementById('adminPanel').classList.toggle('hidden', role !== 'admin');
-  document.getElementById('teacherPanel').classList.toggle('hidden', !(role === 'admin' || role === 'teacher'));
-}
-
-/* =======================
- ADMIN FUNCTIONS
-======================= */
-
-function createRoom() {
-  const roomName = document.getElementById('newRoomName').value.trim();
-  if (!roomName) return;
-  data[currentSite].rooms.push(roomName);
-  saveData();
-  renderRooms();
-}
-
-function bulkCreate() {
-  const text = document.getElementById('bulkUsers').value;
-  const parts = text.split(',');
-  for (let i = 0; i < parts.length; i += 3) {
-    const role = parts[i]?.trim();
-    const username = parts[i+1]?.trim();
-    const password = parts[i+2]?.trim();
-    if (role && username && password) {
-      let r = (role === 'A') ? 'admin' : (role === 'T') ? 'teacher' : 'student';
-      data[currentSite].users[username] = { password: password, role: r };
+    for (const siteName in sites) {
+        const site = sites[siteName];
+        if (site.users[username] && site.users[username].password === password) {
+            currentSite = siteName;
+            currentUser = username;
+            enterApp();
+            return;
+        }
     }
-  }
-  saveData();
-  renderUsers();
+    alert("Invalid credentials.");
 }
 
-function approveBooking(index) {
-  const b = data[currentSite].pending.splice(index, 1)[0];
-  data[currentSite].bookings.push(b);
-  saveData();
-  renderPending();
-  renderCalendar();
+/* ======= ENTER APP ======= */
+function enterApp() {
+    document.getElementById('currentUser').textContent = `${currentUser} (${sites[currentSite].users[currentUser].role})`;
+    showTab('appTab');
+    document.getElementById('appTabBtn').style.display = 'inline';
+    renderRooms();
+    renderPending();
+    renderCalendar();
+    loadSiteColor();
+    if (sites[currentSite].users[currentUser].role === 'admin') {
+        document.getElementById('adminPanel').style.display = 'block';
+    } else {
+        document.getElementById('adminPanel').style.display = 'none';
+    }
 }
 
-function declineBooking(index) {
-  data[currentSite].pending.splice(index, 1);
-  saveData();
-  renderPending();
+/* ======= LOGOUT ======= */
+function logout() {
+    currentSite = null;
+    currentUser = null;
+    showTab('loginTab');
 }
 
-/* =======================
- TEACHER BOOKING
-======================= */
-
-function requestBooking() {
-  const date = document.getElementById('bookingDate').value;
-  const room = document.getElementById('bookingRoom').value;
-  const period = document.getElementById('bookingPeriod').value;
-  if (!date || !room || !period) {
-    alert("Please fill out all fields.");
-    return;
-  }
-
-  data[currentSite].pending.push({ date, room, period, user: currentUser });
-  saveData();
-  renderPending();
+/* ======= ROOM MANAGEMENT ======= */
+function addRoom() {
+    const name = document.getElementById('newRoomName').value.trim();
+    if (name && !sites[currentSite].rooms.includes(name)) {
+        sites[currentSite].rooms.push(name);
+        saveSites();
+        renderRooms();
+        renderCalendar();
+    }
+    document.getElementById('newRoomName').value = '';
 }
-
-/* =======================
- DATA EXPORT / IMPORT
-======================= */
-
-function exportData() {
-  const blob = new Blob([JSON.stringify(data[currentSite])], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${currentSite}-data.json`;
-  a.click();
-}
-
-function importData(event) {
-  const file = event.target.files[0];
-  const reader = new FileReader();
-  reader.onload = function() {
-    data[currentSite] = JSON.parse(reader.result);
-    saveData();
-    loadApp();
-  };
-  reader.readAsText(file);
-}
-
-/* =======================
- RENDER FUNCTIONS
-======================= */
 
 function renderRooms() {
-  const roomList = document.getElementById('roomList');
-  const bookingRoom = document.getElementById('bookingRoom');
-  roomList.innerHTML = '';
-  bookingRoom.innerHTML = '';
+    const roomSelect = document.getElementById('room');
+    roomSelect.innerHTML = '';
+    sites[currentSite].rooms.forEach(room => {
+        const option = document.createElement('option');
+        option.value = room;
+        option.textContent = room;
+        roomSelect.appendChild(option);
+    });
 
-  data[currentSite].rooms.forEach(room => {
-    const li = document.createElement('li');
-    li.textContent = room;
-    roomList.appendChild(li);
-
-    const option = document.createElement('option');
-    option.value = room;
-    option.textContent = room;
-    bookingRoom.appendChild(option);
-  });
+    const list = document.getElementById('roomList');
+    list.innerHTML = '';
+    sites[currentSite].rooms.forEach(room => {
+        const li = document.createElement('li');
+        li.textContent = room;
+        list.appendChild(li);
+    });
 }
 
-function renderUsers() {
-  const userList = document.getElementById('userList');
-  userList.innerHTML = '';
-  const users = data[currentSite].users;
-  for (const u in users) {
-    const li = document.createElement('li');
-    li.textContent = `${u} (${users[u].role})`;
-    userList.appendChild(li);
-  }
+/* ======= BOOKING SYSTEM ======= */
+function book() {
+    const date = document.getElementById('date').value;
+    const room = document.getElementById('room').value;
+    const period = document.getElementById('period').value;
+
+    if (!date || !room) return alert("Please fill in all fields.");
+
+    sites[currentSite].bookings.push({
+        date, room, period, teacher: currentUser
+    });
+    saveSites();
+    renderPending();
+    renderCalendar();
 }
 
+/* ======= RENDER PENDING & CALENDAR ======= */
 function renderPending() {
-  const list = document.getElementById('pendingList');
-  list.innerHTML = '';
-  data[currentSite].pending.forEach((b, i) => {
-    const li = document.createElement('li');
-    li.innerHTML = `${b.date} – ${b.room} – ${b.period} – ${b.user} 
-      <button onclick="approveBooking(${i})">Approve</button> 
-      <button onclick="declineBooking(${i})">Decline</button>`;
-    list.appendChild(li);
-  });
+    const list = document.getElementById('pendingList');
+    list.innerHTML = '';
+    sites[currentSite].bookings.forEach(b => {
+        const li = document.createElement('li');
+        li.textContent = `${b.date} – ${b.room} – ${b.period} – ${b.teacher}`;
+        list.appendChild(li);
+    });
 }
 
 function renderCalendar() {
-  const cal = document.getElementById('calendar');
-  cal.innerHTML = '';
-  for (let i = 1; i <= 30; i++) {
-    const date = `2025-05-${String(i).padStart(2, '0')}`;
-    const div = document.createElement('div');
-    div.className = 'day';
-    const todayBookings = data[currentSite].bookings.filter(b => b.date === date);
-    div.innerHTML = `<strong>May ${i}</strong><br>` +
-      (todayBookings.length ? todayBookings.map(b => `${b.room} – ${b.period} – ${b.user}`).join('<br>') : 'No bookings');
-    cal.appendChild(div);
-  }
+    const cal = document.getElementById('calendar');
+    cal.innerHTML = '';
+    for (let i = 1; i <= 30; i++) {
+        const date = `2025-05-${String(i).padStart(2, '0')}`;
+        const bookings = sites[currentSite].bookings.filter(b => b.date === date);
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${date}</strong><br>${bookings.map(b => `${b.room} – ${b.period} – ${b.teacher}`).join('<br>') || 'No bookings'}`;
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "5px";
+        div.style.margin = "5px";
+        cal.appendChild(div);
+    }
 }
 
-/* =======================
- SAVE DATA (LOCAL STORAGE)
-======================= */
-
-function saveData() {
-  localStorage.setItem('bookingData', JSON.stringify(data));
-
-  /*
-  ======== SERVER INTEGRATION START ========
-  Future: Replace localStorage save with server-side API call here.
-  Example:
-  sendDataToServer(data[currentSite]);
-  ======== SERVER INTEGRATION END ========
-  */
+/* ======= BULK USER CREATION ======= */
+function createUsers() {
+    const input = document.getElementById('bulkUserInput').value;
+    const entries = input.split(',');
+    for (let i = 0; i < entries.length; i += 3) {
+        const role = entries[i]?.trim();
+        const username = entries[i + 1]?.trim();
+        const password = entries[i + 2]?.trim();
+        if (role && username && password) {
+            let roleName = role.toUpperCase() === 'S' ? 'student' : role.toUpperCase() === 'T' ? 'teacher' : 'admin';
+            sites[currentSite].users[username] = { password, role: roleName };
+        }
+    }
+    saveSites();
+    alert("Users created.");
 }
+
+/* ======= DATA SAVE/LOAD ======= */
+function saveSites() {
+    localStorage.setItem('bookingSites', JSON.stringify(sites));
+}
+
+/* ======= EXPORT / IMPORT ======= */
+function exportData() {
+    const data = JSON.stringify(sites[currentSite]);
+    const blob = new Blob([data], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentSite}_data.json`;
+    a.click();
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        sites[currentSite] = JSON.parse(e.target.result);
+        saveSites();
+        enterApp();
+    };
+    reader.readAsText(file);
+}
+
+/* ======= COLOR CHANGE ======= */
+function changeSiteColor() {
+    const color = document.getElementById('siteColorPicker').value;
+    sites[currentSite].siteColor = color;
+    saveSites();
+    loadSiteColor();
+}
+
+function loadSiteColor() {
+    const color = sites[currentSite].siteColor || "#4CAF50";
+    document.documentElement.style.setProperty('--siteColor', color);
+}
+
+/* ======= PLACE FOR FUTURE SERVER INTEGRATION ======= */
+// When you're ready to add online storage later, this is where the code will go.
+
 </script>
+
 </body>
 </html>
