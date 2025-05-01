@@ -1,344 +1,355 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom Booking System</title>
-    <style>
-        /* ===================== GLOBAL STYLES ===================== */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-        }
-        h2, h3, h4 {
-            color: #333;
-        }
-        button {
-            padding: 8px 15px;
-            margin: 5px;
-            background-color: var(--primaryColor, #4CAF50);
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #333;
-        }
-        input, select, textarea {
-            padding: 5px;
-            margin: 5px;
-        }
-        .hidden {
-            display: none;
-        }
-        nav button {
-            background-color: #ddd;
-            color: black;
-        }
-        nav button.active {
-            background-color: var(--primaryColor, #4CAF50);
-            color: white;
-        }
-        hr {
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Classroom Booking System</title>
+<style>
+  :root {
+    --primary-color: navy;
+    --accent-color: crimson;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f0f2f5;
+    color: #222;
+  }
+
+  header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px;
+    text-align: center;
+  }
+
+  nav {
+    background-color: #ddd;
+    padding: 10px;
+    text-align: center;
+  }
+
+  nav button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin: 0 5px;
+    cursor: pointer;
+  }
+
+  nav button.active {
+    background-color: var(--accent-color);
+  }
+
+  main {
+    display: none;
+    padding: 20px;
+  }
+
+  main.active {
+    display: block;
+  }
+
+  .btn {
+    padding: 10px 15px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin: 5px 0;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+  }
+
+  .day {
+    background: white;
+    padding: 10px;
+    border: 1px solid #ccc;
+    min-height: 100px;
+  }
+
+  input[type="text"], input[type="password"], input[type="date"], select {
+    padding: 5px;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  .admin-section {
+    background: #e9ecef;
+    padding: 10px;
+    margin-top: 10px;
+  }
+</style>
 </head>
 <body>
 
-<!-- ===================== TOP NAVIGATION ===================== -->
-<nav>
+<header>
+  <h1>Classroom Booking System</h1>
+</header>
+
+<!-- ======= ONE ROW NAVIGATION ======= -->
+<nav id="topNav">
+  <span id="navGuest">
     <button onclick="showScreen('loginScreen')">Login</button>
     <button onclick="showScreen('registerScreen')">Register</button>
-    <button onclick="showScreen('appScreen')">App</button>
+  </span>
+  <span id="navUser" style="display:none;">
+    <button onclick="logout()">Logout</button>
+    <button onclick="showAppTab('adminPanel')">Admin Panel</button>
+    <button onclick="showAppTab('bookingPanel')">Room Booking</button>
+    <button onclick="showAppTab('calendarPanel')">Calendar</button>
+  </span>
 </nav>
 
-<!-- ===================== LOGIN SCREEN ===================== -->
-<section id="loginScreen">
-    <h2>Login</h2>
-    <input type="text" id="loginUsername" placeholder="Username"><br>
-    <input type="password" id="loginPassword" placeholder="Password"><br>
-    <button onclick="login()">Login</button>
-    <button onclick="showScreen('registerScreen')">Register New Site</button>
-</section>
+<!-- ======= LOGIN ======= -->
+<main id="loginScreen" class="active">
+  <h2>Login</h2>
+  <input type="text" id="loginUsername" placeholder="Username"><br>
+  <input type="password" id="loginPassword" placeholder="Password"><br>
+  <button class="btn" onclick="login()">Login</button>
+</main>
 
-<!-- ===================== REGISTER SCREEN ===================== -->
-<section id="registerScreen" class="hidden">
-    <h2>Register New Site</h2>
-    <input type="text" id="registerSite" placeholder="Site Name"><br>
-    <input type="text" id="registerUsername" placeholder="Admin Username"><br>
-    <input type="password" id="registerPassword" placeholder="Password"><br>
-    <button onclick="register()">Register</button>
-</section>
+<!-- ======= REGISTER ======= -->
+<main id="registerScreen">
+  <h2>Register New Site</h2>
+  <input type="text" id="registerSite" placeholder="Site Name"><br>
+  <input type="text" id="registerUsername" placeholder="Admin Username"><br>
+  <input type="password" id="registerPassword" placeholder="Password"><br>
+  <button class="btn" onclick="register()">Register</button>
+</main>
 
-<!-- ===================== APP SCREEN ===================== -->
-<section id="appScreen" class="hidden">
-    <h2>Welcome, <span id="currentUser"></span></h2>
-    <button onclick="logout()">Logout</button>
-    <hr>
+<!-- ======= APP SCREEN ======= -->
+<main id="appScreen">
+  <h2>Welcome, <span id="currentUser"></span></h2>
 
-    <!-- INTERNAL TABS -->
-    <nav>
-        <button onclick="showAppTab('adminTab')" id="tabAdmin">Admin Panel</button>
-        <button onclick="showAppTab('bookingTab')" id="tabBooking">Room Booking</button>
-        <button onclick="showAppTab('calendarTab')" id="tabCalendar">Calendar</button>
-    </nav>
+  <!-- ADMIN PANEL -->
+  <section id="adminPanel" class="app-tab active">
+    <h3>Admin Panel</h3>
+    <button class="btn" onclick="exportData()">Export Data</button>
+    <input type="file" onchange="importData(event)">
+    <br><br>
+    <label>Site Color:</label>
+    <input type="color" id="siteColor" onchange="changeSiteColor()"><br><br>
 
-    <!-- ===================== ADMIN PANEL ===================== -->
-    <div id="adminTab">
-        <h3>Admin Panel</h3>
-
-        <!-- Export/Import -->
-        <button onclick="exportData()">Export Data</button>
-        <input type="file" onchange="importData(event)"><br><br>
-
-        <!-- Site Color -->
-        <h4>Site Color</h4>
-        <input type="color" id="siteColorPicker" value="#4CAF50" onchange="changeSiteColor()"><br><br>
-
-        <!-- Create Room -->
-        <h4>Create Room</h4>
-        <input type="text" id="newRoomName" placeholder="Room name">
-        <button onclick="addRoom()">Add Room</button>
-        <ul id="roomList"></ul><br>
-
-        <!-- Bulk User Creation -->
-        <h4>Bulk User Creation</h4>
-        <textarea id="bulkUserInput" rows="4" placeholder="Format: S,username,password, T,username,password, A,username,password"></textarea><br>
-        <button onclick="createUsers()">Create Users</button>
+    <div class="admin-section">
+      <h4>Create Room</h4>
+      <input type="text" id="newRoomName" placeholder="Room name">
+      <button class="btn" onclick="addRoom()">Add Room</button>
+      <ul id="roomList"></ul>
     </div>
 
-    <!-- ===================== ROOM BOOKING ===================== -->
-    <div id="bookingTab" class="hidden">
-        <h3>Book a Room</h3>
-        <input type="date" id="date"><br>
-        <select id="room"></select><br>
-        <select id="period">
-            <option>Period 1</option>
-            <option>Period 2</option>
-            <option>Period 3</option>
-            <option>Lunch</option>
-            <option>Period 4</option>
-        </select><br>
-        <button onclick="book()">Submit Booking</button>
-        <ul id="pendingList"></ul>
+    <div class="admin-section">
+      <h4>Bulk User Creation</h4>
+      <textarea id="bulkUsers" placeholder="S,username,password, T,username,password, A,username,password" rows="3" style="width:100%;"></textarea><br>
+      <button class="btn" onclick="bulkCreateUsers()">Create Users</button>
+      <ul id="userList"></ul>
     </div>
+  </section>
 
-    <!-- ===================== CALENDAR ===================== -->
-    <div id="calendarTab" class="hidden">
-        <h3>Booking Calendar</h3>
-        <div id="calendar"></div>
-    </div>
-</section>
+  <!-- BOOKING PANEL -->
+  <section id="bookingPanel" class="app-tab" style="display:none;">
+    <h3>Book a Room</h3>
+    <form onsubmit="submitBooking(event)">
+      <label>Date:</label>
+      <input type="date" id="date" required><br>
+      <label>Room:</label>
+      <select id="roomSelect"></select><br>
+      <label>Period:</label>
+      <select id="period">
+        <option>Period 1</option>
+        <option>Period 2</option>
+        <option>Period 3</option>
+        <option>Lunch</option>
+        <option>Period 4</option>
+      </select><br>
+      <button class="btn" type="submit">Submit Booking</button>
+    </form>
+  </section>
 
-<!-- ===================== JAVASCRIPT ===================== -->
+  <!-- CALENDAR PANEL -->
+  <section id="calendarPanel" class="app-tab" style="display:none;">
+    <h3>Booking Calendar</h3>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </section>
+
+</main>
+
 <script>
-/* ===================== GLOBAL DATA ===================== */
-let sites = JSON.parse(localStorage.getItem('sites')) || {};
-let currentSite = null;
+/* ====================== DATA ====================== */
+let siteData = JSON.parse(localStorage.getItem('siteData')) || {siteName:'Default Site', users:[], rooms:[], bookings:[], color:'#000080'};
 let currentUser = null;
-let rooms = [];
-let bookings = [];
-let pending = [];
-let siteColor = "#4CAF50";
 
-/* ===================== SCREEN MANAGEMENT ===================== */
-function showScreen(screen) {
-    ['loginScreen', 'registerScreen', 'appScreen'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-    });
-    document.getElementById(screen).style.display = 'block';
-    if (screen === 'appScreen') {
-        showAppTab('adminTab');
-    }
-}
-
-/* ===================== APP TAB MANAGEMENT ===================== */
-function showAppTab(tabId) {
-    ['adminTab', 'bookingTab', 'calendarTab'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-        document.getElementById('tab' + id.replace('Tab', '')).classList.remove('active');
-    });
-    document.getElementById(tabId).style.display = 'block';
-    document.getElementById('tab' + tabId.replace('Tab', '')).classList.add('active');
-}
-
-/* ===================== REGISTRATION ===================== */
-function register() {
-    const site = document.getElementById('registerSite').value.trim();
-    const user = document.getElementById('registerUsername').value.trim();
-    const pass = document.getElementById('registerPassword').value;
-    if (!site || !user || !pass) return alert("Fill all fields");
-    if (sites[site]) return alert("Site exists");
-    sites[site] = {
-        users: [{username: user, password: pass, role: "admin"}],
-        rooms: [],
-        bookings: [],
-        pending: [],
-        color: "#4CAF50"
-    };
-    localStorage.setItem('sites', JSON.stringify(sites));
-    alert("Site registered!");
-    showScreen('loginScreen');
-}
-
-/* ===================== LOGIN ===================== */
-function login() {
-    const user = document.getElementById('loginUsername').value.trim();
-    const pass = document.getElementById('loginPassword').value;
-    for (let site in sites) {
-        const u = sites[site].users.find(u => u.username === user && u.password === pass);
-        if (u) {
-            currentSite = site;
-            currentUser = u;
-            enterApp();
-            return;
-        }
-    }
-    alert("Invalid login");
-}
-
-/* ===================== ENTER APP ===================== */
-function enterApp() {
-    document.getElementById('currentUser').textContent = `${currentUser.username} (${currentUser.role})`;
-    rooms = sites[currentSite].rooms;
-    bookings = sites[currentSite].bookings;
-    pending = sites[currentSite].pending;
-    siteColor = sites[currentSite].color;
-    document.documentElement.style.setProperty('--primaryColor', siteColor);
-    document.getElementById('siteColorPicker').value = siteColor;
-    showScreen('appScreen');
-    renderRooms();
-    renderCalendar();
-}
-
-/* ===================== LOGOUT ===================== */
-function logout() {
-    currentSite = null;
-    currentUser = null;
-    showScreen('loginScreen');
-}
-
-/* ===================== CHANGE SITE COLOR ===================== */
-function changeSiteColor() {
-    siteColor = document.getElementById('siteColorPicker').value;
-    sites[currentSite].color = siteColor;
-    document.documentElement.style.setProperty('--primaryColor', siteColor);
-    saveData();
-}
-
-/* ===================== ROOM MANAGEMENT ===================== */
-function addRoom() {
-    const name = document.getElementById('newRoomName').value.trim();
-    if (!name || rooms.includes(name)) return alert("Invalid or duplicate room");
-    rooms.push(name);
-    renderRooms();
-    saveData();
-}
-
-function renderRooms() {
-    const roomList = document.getElementById('roomList');
-    roomList.innerHTML = '';
-    rooms.forEach(room => {
-        const li = document.createElement('li');
-        li.textContent = room;
-        roomList.appendChild(li);
-    });
-
-    const roomSelect = document.getElementById('room');
-    roomSelect.innerHTML = '';
-    rooms.forEach(room => {
-        const opt = document.createElement('option');
-        opt.textContent = room;
-        roomSelect.appendChild(opt);
-    });
-}
-
-/* ===================== USER MANAGEMENT ===================== */
-function createUsers() {
-    const input = document.getElementById('bulkUserInput').value;
-    const parts = input.split(',').map(x => x.trim());
-    for (let i = 0; i < parts.length; i += 3) {
-        const role = parts[i];
-        const username = parts[i + 1];
-        const password = parts[i + 2];
-        sites[currentSite].users.push({username, password, role});
-    }
-    saveData();
-    alert("Users added");
-}
-
-/* ===================== BOOKING ===================== */
-function book() {
-    const date = document.getElementById('date').value;
-    const room = document.getElementById('room').value;
-    const period = document.getElementById('period').value;
-    pending.push({date, room, period, teacher: currentUser.username});
-    renderPending();
-    saveData();
-}
-
-function renderPending() {
-    const list = document.getElementById('pendingList');
-    list.innerHTML = '';
-    pending.forEach(b => {
-        const li = document.createElement('li');
-        li.textContent = `${b.date} – ${b.room} – ${b.period} – ${b.teacher}`;
-        list.appendChild(li);
-    });
-}
-
-/* ===================== CALENDAR ===================== */
-function renderCalendar() {
-    const cal = document.getElementById('calendar');
-    cal.innerHTML = '';
-    for (let i = 1; i <= 30; i++) {
-        const date = `2025-05-${String(i).padStart(2, '0')}`;
-        const day = document.createElement('div');
-        const todaysBookings = bookings.filter(b => b.date === date);
-        day.innerHTML = `<strong>May ${i}</strong><br>` + 
-            (todaysBookings.length ? todaysBookings.map(b => `${b.room} – ${b.period} – ${b.teacher}`).join('<br>') : 'No bookings');
-        cal.appendChild(day);
-    }
-}
-
-/* ===================== EXPORT/IMPORT ===================== */
-function exportData() {
-    const data = JSON.stringify(sites[currentSite]);
-    const blob = new Blob([data], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentSite}.json`;
-    a.click();
-}
-
-function importData(event) {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-        sites[currentSite] = JSON.parse(reader.result);
-        saveData();
-        enterApp();
-    };
-    reader.readAsText(file);
-}
-
-/* ===================== SAVE ===================== */
+/* ====================== UTILITIES ====================== */
 function saveData() {
-    sites[currentSite].rooms = rooms;
-    sites[currentSite].bookings = bookings;
-    sites[currentSite].pending = pending;
-    localStorage.setItem('sites', JSON.stringify(sites));
+  localStorage.setItem('siteData', JSON.stringify(siteData));
 }
 
-/* ===================== PLACEHOLDER FOR FUTURE SERVER ===================== */
-// Server-side storage will go here later!
+function showScreen(screen) {
+  document.querySelectorAll('main').forEach(m => m.classList.remove('active'));
+  document.getElementById(screen).classList.add('active');
+}
+
+/* ====================== REGISTER ====================== */
+function register() {
+  const site = document.getElementById('registerSite').value.trim();
+  const user = document.getElementById('registerUsername').value.trim();
+  const pass = document.getElementById('registerPassword').value.trim();
+  if (!site || !user || !pass) return alert("Fill in all fields.");
+  siteData = {siteName: site, users:[{username:user,password:pass,role:'admin'}], rooms:[], bookings:[], color:'#000080'};
+  saveData();
+  alert("Site registered.");
+  showScreen('loginScreen');
+}
+
+/* ====================== LOGIN ====================== */
+function login() {
+  const user = document.getElementById('loginUsername').value.trim();
+  const pass = document.getElementById('loginPassword').value.trim();
+  const found = siteData.users.find(u => u.username===user && u.password===pass);
+  if (!found) return alert("Invalid credentials.");
+  currentUser = found;
+  document.getElementById('currentUser').textContent = `${found.username} (${found.role})`;
+  showScreen('appScreen');
+  document.getElementById('navGuest').style.display = 'none';
+  document.getElementById('navUser').style.display = 'inline';
+  loadApp();
+}
+
+/* ====================== LOGOUT ====================== */
+function logout() {
+  currentUser = null;
+  showScreen('loginScreen');
+  document.getElementById('navGuest').style.display = 'inline';
+  document.getElementById('navUser').style.display = 'none';
+}
+
+/* ====================== APP SETUP ====================== */
+function loadApp() {
+  changeSiteColor();
+  populateRooms();
+  populateUsers();
+  renderCalendar();
+  showAppTab('adminPanel');
+}
+
+/* ====================== NAV TABS ====================== */
+function showAppTab(tabId) {
+  ['adminPanel', 'bookingPanel', 'calendarPanel'].forEach(id => {
+    document.getElementById(id).style.display = (id === tabId) ? 'block' : 'none';
+  });
+}
+
+/* ====================== ADMIN ====================== */
+function changeSiteColor() {
+  let color = siteData.color;
+  const picker = document.getElementById('siteColor');
+  if (picker.value) color = picker.value;
+  siteData.color = color;
+  saveData();
+  document.documentElement.style.setProperty('--primary-color', color);
+}
+
+function addRoom() {
+  const name = document.getElementById('newRoomName').value.trim();
+  if (!name || siteData.rooms.includes(name)) return;
+  siteData.rooms.push(name);
+  saveData();
+  populateRooms();
+  renderCalendar();
+}
+
+function populateRooms() {
+  const roomList = document.getElementById('roomList');
+  const roomSelect = document.getElementById('roomSelect');
+  roomList.innerHTML = '';
+  roomSelect.innerHTML = '';
+  siteData.rooms.forEach(r => {
+    const li = document.createElement('li');
+    li.textContent = r;
+    roomList.appendChild(li);
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = r;
+    roomSelect.appendChild(opt);
+  });
+}
+
+function bulkCreateUsers() {
+  const text = document.getElementById('bulkUsers').value.trim();
+  const entries = text.split(',');
+  for (let i = 0; i < entries.length; i += 3) {
+    const role = entries[i]?.trim();
+    const username = entries[i+1]?.trim();
+    const password = entries[i+2]?.trim();
+    if (role && username && password) {
+      siteData.users.push({username,password,role: (role==='A'?'admin':role==='T'?'teacher':'student')});
+    }
+  }
+  saveData();
+  populateUsers();
+}
+
+function populateUsers() {
+  const ul = document.getElementById('userList');
+  ul.innerHTML = '';
+  siteData.users.forEach(u => {
+    const li = document.createElement('li');
+    li.textContent = `${u.username} (${u.role})`;
+    ul.appendChild(li);
+  });
+}
+
+/* ====================== BOOKING ====================== */
+function submitBooking(e) {
+  e.preventDefault();
+  const date = document.getElementById('date').value;
+  const room = document.getElementById('roomSelect').value;
+  const period = document.getElementById('period').value;
+  siteData.bookings.push({date, room, period, user:currentUser.username});
+  saveData();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 30; i++) {
+    const date = `2025-05-${String(i).padStart(2, '0')}`;
+    const day = document.createElement('div');
+    day.className = 'day';
+    const bookings = siteData.bookings.filter(b => b.date === date);
+    day.innerHTML = `<strong>May ${i}</strong><br>` +
+      (bookings.length ? bookings.map(b=>`${b.room} – ${b.period} – ${b.user}`).join('<br>') : 'No bookings');
+    grid.appendChild(day);
+  }
+}
+
+/* ====================== IMPORT/EXPORT ====================== */
+function exportData() {
+  const blob = new Blob([JSON.stringify(siteData)], {type:"application/json"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'siteData.json';
+  a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function() {
+    siteData = JSON.parse(reader.result);
+    saveData();
+    loadApp();
+  };
+  reader.readAsText(file);
+}
 
 </script>
-
 </body>
 </html>
