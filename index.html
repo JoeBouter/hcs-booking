@@ -99,7 +99,9 @@
   const bookings = [];
   const pending = [];
 
-  // ROOM AND CALENDAR FUNCTIONS
+  let isSigningIn = false; // Stop multiple logins
+
+  // Room and Calendar Functions
   function populateRooms() {
     const roomSelect = document.getElementById('room');
     roomSelect.innerHTML = '';
@@ -195,7 +197,6 @@
     e.target.reset();
   });
 
-  // NAVIGATION
   document.querySelectorAll('nav a').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
@@ -205,13 +206,20 @@
     });
   });
 
-  // --- LOGIN AND REDIRECT FIX ---
+  // Login and Redirect Logic
   document.addEventListener('DOMContentLoaded', () => {
     console.log("Page loaded");
 
     loginBtn.onclick = () => {
-      console.log("Signing in...");
-      signInWithRedirect(auth, provider);
+      if (!isSigningIn) {
+        isSigningIn = true;
+        console.log("Signing in...");
+        signInWithRedirect(auth, provider).finally(() => {
+          isSigningIn = false;
+        });
+      } else {
+        console.log("Sign-in already in progress.");
+      }
     };
 
     logoutBtn.onclick = () => {
@@ -219,9 +227,9 @@
       signOut(auth);
     };
 
-    // Process redirect result FIRST
     getRedirectResult(auth)
       .then((result) => {
+        console.log("getRedirectResult promise resolved.");
         if (result && result.user) {
           console.log("Redirect sign-in successful:", result.user);
         } else {
@@ -236,10 +244,13 @@
       });
 
     function setupAuthStateListener() {
+      console.log("setupAuthStateListener called");
+
       onAuthStateChanged(auth, (user) => {
-        console.log("Auth state changed. User:", user);
+        console.log("onAuthStateChanged triggered. User:", user);
+
         if (user) {
-          const role = "admin"; // For now, hardcoded
+          const role = "admin"; // Hardcoded
           authPanel.classList.add("hidden");
           appPanel.classList.remove("hidden");
           userInfo.textContent = `Logged in as ${user.displayName} (${role})`;
@@ -254,7 +265,6 @@
       });
     }
 
-    // INIT
     populateRooms();
     renderRoomList();
     renderCalendar();
