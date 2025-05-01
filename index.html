@@ -1,274 +1,360 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HCS Classroom Booking</title>
-  <style>
-    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
-    .hidden { display: none; }
-    button { padding: 10px 15px; background: #2d3e50; color: white; border: none; border-radius: 5px; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-    .day { background: white; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-height: 80px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classroom Booking System V3</title>
+
+<!-- ========== STYLES ========== -->
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h2 { margin-top: 20px; }
+  .hidden { display: none; }
+  button { margin: 5px; padding: 8px 15px; }
+  input, select, textarea { margin: 5px; padding: 5px; }
+  .admin-section { border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+  .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .day { border: 1px solid #999; padding: 5px; min-height: 60px; }
+</style>
 </head>
 <body>
 
-<!-- Login Panel -->
-<div id="authPanel">
-  <h2>Welcome to HCS Booking</h2>
-  <button id="loginBtn">Sign in with Google</button>
+<h1>Classroom Booking System</h1>
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="loginScreen">
+  <h2>Login</h2>
+  <input type="text" id="loginUsername" placeholder="Username"><br>
+  <input type="password" id="loginPassword" placeholder="Password"><br>
+  <button onclick="login()">Login</button>
+  <button onclick="showRegister()">Register New Site</button>
 </div>
 
-<!-- App Panel -->
-<div id="appPanel" class="hidden">
-  <h2>Classroom Booking</h2>
-  <p id="userInfo"></p>
-  <button id="logoutBtn">Log out</button>
-
-  <nav>
-    <a href="#home">Home</a>
-    <a href="#bookings">Book a Room</a>
-    <a href="#admin">Admin Panel</a>
-  </nav>
-
-  <main id="home">
-    <h3>Bookings Calendar</h3>
-    <div class="calendar-grid" id="calendarGrid"></div>
-  </main>
-
-  <main id="bookings" style="display:none;">
-    <h3>Book a Classroom</h3>
-    <form id="bookingForm">
-      <label>Date:</label>
-      <input type="date" id="date" required>
-      <label>Room:</label>
-      <select id="room"></select>
-      <label>Period:</label>
-      <select id="period">
-        <option>Period 1</option>
-        <option>Period 2</option>
-        <option>Period 3</option>
-        <option>Lunch</option>
-        <option>Period 4</option>
-      </select>
-      <label>Your Name:</label>
-      <input type="text" id="teacher" required>
-      <button type="submit">Submit Booking</button>
-    </form>
-  </main>
-
-  <main id="admin" style="display:none;">
-    <h3>Pending Approvals</h3>
-    <ul id="pendingList"></ul>
-
-    <h3>Manage Rooms</h3>
-    <input type="text" id="newRoomName" placeholder="e.g. E5" />
-    <button onclick="addRoom()">Add Room</button>
-    <ul id="roomList"></ul>
-  </main>
+<!-- ================= REGISTER SCREEN ================= -->
+<div id="registerScreen" class="hidden">
+  <h2>Register New Site</h2>
+  <input type="text" id="registerSite" placeholder="Site Name"><br>
+  <input type="text" id="registerUsername" placeholder="Admin Username"><br>
+  <input type="password" id="registerPassword" placeholder="Password"><br>
+  <button onclick="register()">Register</button>
 </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+<!-- ================= MAIN APP ================= -->
+<div id="appScreen" class="hidden">
+  <h2>Welcome, <span id="currentUser"></span></h2>
+  <button onclick="logout()">Logout</button>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBhl57b8ncjZkca9vxWng79AUuPq5WnO00",
-    authDomain: "hcs-booking.firebaseapp.com",
-    projectId: "hcs-booking",
-    storageBucket: "hcs-booking.firebasestorage.app",
-    messagingSenderId: "923003673274",
-    appId: "1:923003673274:web:3fdbe3bd24775226ee4083",
-    measurementId: "G-ZF0LMCXME5"
-  };
+  <!-- ===== ADMIN PANEL ===== -->
+  <div id="adminPanel" class="hidden">
+    <h3>Admin Panel</h3>
+    <button onclick="exportData()">Export Data</button>
+    <input type="file" id="importFile" onchange="importData(event)">
+    <hr>
 
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
+    <!-- Create Room -->
+    <div class="admin-section">
+      <h4>Create Room</h4>
+      <input type="text" id="newRoomName" placeholder="Room name">
+      <button onclick="createRoom()">Add Room</button>
+      <ul id="roomList"></ul>
+    </div>
 
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const authPanel = document.getElementById('authPanel');
-  const appPanel = document.getElementById('appPanel');
-  const userInfo = document.getElementById('userInfo');
+    <!-- Bulk User Creation -->
+    <div class="admin-section">
+      <h4>Bulk User Creation</h4>
+      <textarea id="bulkUsers" rows="4" cols="50" placeholder="Format: S,username,password, T,username,password, A,username,password"></textarea><br>
+      <button onclick="bulkCreate()">Create Users</button>
+      <ul id="userList"></ul>
+    </div>
 
-  const rooms = ['B1', 'B2', 'C1', 'Library'];
-  const bookings = [];
-  const pending = [];
+    <!-- Pending Bookings -->
+    <div class="admin-section">
+      <h4>Pending Bookings</h4>
+      <ul id="pendingList"></ul>
+    </div>
+  </div>
 
-  let isSigningIn = false; // Stop multiple logins
+  <!-- ===== TEACHER PANEL ===== -->
+  <div id="teacherPanel" class="hidden">
+    <h3>Book a Room</h3>
+    <input type="date" id="bookingDate">
+    <select id="bookingRoom"></select>
+    <input type="text" id="bookingPeriod" placeholder="Period">
+    <button onclick="requestBooking()">Request Booking</button>
+  </div>
 
-  // Room and Calendar Functions
-  function populateRooms() {
-    const roomSelect = document.getElementById('room');
-    roomSelect.innerHTML = '';
-    rooms.forEach(room => {
-      const option = document.createElement('option');
-      option.value = room;
-      option.textContent = room;
-      roomSelect.appendChild(option);
-    });
-  }
+  <!-- ===== CALENDAR ===== -->
+  <div id="calendarSection">
+    <h3>Calendar</h3>
+    <div class="calendar" id="calendar"></div>
+  </div>
+</div>
 
-  function renderCalendar() {
-    const grid = document.getElementById('calendarGrid');
-    grid.innerHTML = '';
-    for (let i = 1; i <= 30; i++) {
-      const date = `2025-05-${i.toString().padStart(2, '0')}`;
-      const todayBookings = bookings.filter(b => b.date === date);
-      const div = document.createElement('div');
-      div.className = 'day';
-      div.innerHTML = `<strong>May ${i}</strong><br>` +
-        (todayBookings.length ? todayBookings.map(b => `${b.room} – ${b.period} – ${b.teacher}`).join('<br>') : 'No bookings');
-      grid.appendChild(div);
+<!-- ================= SCRIPT ================= -->
+<script>
+/*
+=====================
+ LOCAL STORAGE SYSTEM
+=====================
+Stores all data per "site".
+Each site has:
+- users
+- rooms
+- bookings
+- pending bookings
+
+Future note:
+SERVER INTEGRATION START/END areas are marked 
+for adding server-side data syncing later.
+*/
+
+let data = JSON.parse(localStorage.getItem('bookingData')) || {};
+
+let currentSite = null;
+let currentUser = null;
+
+/* =======================
+ LOGIN / REGISTER FUNCTIONS
+======================= */
+
+function login() {
+  const username = document.getElementById('loginUsername').value;
+  const password = document.getElementById('loginPassword').value;
+
+  for (const site in data) {
+    const users = data[site].users || {};
+    if (users[username] && users[username].password === password) {
+      currentSite = site;
+      currentUser = username;
+      loadApp();
+      return;
     }
   }
+  alert("Invalid login.");
+}
 
-  function renderRoomList() {
-    const list = document.getElementById('roomList');
-    list.innerHTML = '';
-    rooms.forEach((room, index) => {
-      const li = document.createElement('li');
-      li.innerHTML = `${room} <button onclick="deleteRoom(${index})">Delete</button>`;
-      list.appendChild(li);
-    });
+function showRegister() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('registerScreen').classList.remove('hidden');
+}
+
+function register() {
+  const site = document.getElementById('registerSite').value;
+  const username = document.getElementById('registerUsername').value;
+  const password = document.getElementById('registerPassword').value;
+
+  if (data[site]) {
+    alert("Site already exists.");
+    return;
   }
 
-  window.addRoom = function() {
-    const name = document.getElementById('newRoomName').value.trim();
-    if (name && !rooms.includes(name)) {
-      rooms.push(name);
-      populateRooms();
-      renderRoomList();
-      renderCalendar();
-      alert(`Room "${name}" added.`);
-    }
-    document.getElementById('newRoomName').value = '';
+  data[site] = {
+    users: { [username]: { password: password, role: "admin" } },
+    rooms: [],
+    bookings: [],
+    pending: []
   };
 
-  window.deleteRoom = function(index) {
-    const roomToDelete = rooms[index];
-    if (confirm(`Delete room "${roomToDelete}" and its bookings?`)) {
-      rooms.splice(index, 1);
-      for (let i = bookings.length - 1; i >= 0; i--) if (bookings[i].room === roomToDelete) bookings.splice(i, 1);
-      for (let i = pending.length - 1; i >= 0; i--) if (pending[i].room === roomToDelete) pending.splice(i, 1);
-      populateRooms();
-      renderRoomList();
-      renderCalendar();
-      renderPending();
-    }
-  };
+  saveData();
+  currentSite = site;
+  currentUser = username;
+  loadApp();
+}
 
-  function renderPending() {
-    const list = document.getElementById('pendingList');
-    list.innerHTML = '';
-    pending.forEach((b, i) => {
-      const li = document.createElement('li');
-      li.innerHTML = `${b.date} – ${b.room} – ${b.period} – ${b.teacher} 
-        <button onclick="approve(${i})">Approve</button> 
-        <button onclick="decline(${i})">Decline</button>`;
-      list.appendChild(li);
-    });
+/* =======================
+ APP LOAD / LOGOUT
+======================= */
+
+function loadApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('registerScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+
+  const role = data[currentSite].users[currentUser].role;
+  document.getElementById('currentUser').innerText = `${currentUser} (${role})`;
+
+  showPanels();
+  renderRooms();
+  renderUsers();
+  renderPending();
+  renderCalendar();
+}
+
+function logout() {
+  currentSite = null;
+  currentUser = null;
+  document.getElementById('appScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+/* =======================
+ PANEL DISPLAY
+======================= */
+
+function showPanels() {
+  const role = data[currentSite].users[currentUser].role;
+  document.getElementById('adminPanel').classList.toggle('hidden', role !== 'admin');
+  document.getElementById('teacherPanel').classList.toggle('hidden', !(role === 'admin' || role === 'teacher'));
+}
+
+/* =======================
+ ADMIN FUNCTIONS
+======================= */
+
+function createRoom() {
+  const roomName = document.getElementById('newRoomName').value.trim();
+  if (!roomName) return;
+  data[currentSite].rooms.push(roomName);
+  saveData();
+  renderRooms();
+}
+
+function bulkCreate() {
+  const text = document.getElementById('bulkUsers').value;
+  const parts = text.split(',');
+  for (let i = 0; i < parts.length; i += 3) {
+    const role = parts[i]?.trim();
+    const username = parts[i+1]?.trim();
+    const password = parts[i+2]?.trim();
+    if (role && username && password) {
+      let r = (role === 'A') ? 'admin' : (role === 'T') ? 'teacher' : 'student';
+      data[currentSite].users[username] = { password: password, role: r };
+    }
+  }
+  saveData();
+  renderUsers();
+}
+
+function approveBooking(index) {
+  const b = data[currentSite].pending.splice(index, 1)[0];
+  data[currentSite].bookings.push(b);
+  saveData();
+  renderPending();
+  renderCalendar();
+}
+
+function declineBooking(index) {
+  data[currentSite].pending.splice(index, 1);
+  saveData();
+  renderPending();
+}
+
+/* =======================
+ TEACHER BOOKING
+======================= */
+
+function requestBooking() {
+  const date = document.getElementById('bookingDate').value;
+  const room = document.getElementById('bookingRoom').value;
+  const period = document.getElementById('bookingPeriod').value;
+  if (!date || !room || !period) {
+    alert("Please fill out all fields.");
+    return;
   }
 
-  window.approve = function(i) {
-    bookings.push(pending.splice(i, 1)[0]);
-    renderPending();
-    renderCalendar();
-  };
+  data[currentSite].pending.push({ date, room, period, user: currentUser });
+  saveData();
+  renderPending();
+}
 
-  window.decline = function(i) {
-    pending.splice(i, 1);
-    renderPending();
-  };
+/* =======================
+ DATA EXPORT / IMPORT
+======================= */
 
-  document.getElementById('bookingForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const date = document.getElementById('date').value;
-    const room = document.getElementById('room').value;
-    const period = document.getElementById('period').value;
-    const teacher = document.getElementById('teacher').value;
-    pending.push({ date, room, period, teacher });
-    renderPending();
-    alert('Booking submitted for approval.');
-    e.target.reset();
+function exportData() {
+  const blob = new Blob([JSON.stringify(data[currentSite])], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${currentSite}-data.json`;
+  a.click();
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function() {
+    data[currentSite] = JSON.parse(reader.result);
+    saveData();
+    loadApp();
+  };
+  reader.readAsText(file);
+}
+
+/* =======================
+ RENDER FUNCTIONS
+======================= */
+
+function renderRooms() {
+  const roomList = document.getElementById('roomList');
+  const bookingRoom = document.getElementById('bookingRoom');
+  roomList.innerHTML = '';
+  bookingRoom.innerHTML = '';
+
+  data[currentSite].rooms.forEach(room => {
+    const li = document.createElement('li');
+    li.textContent = room;
+    roomList.appendChild(li);
+
+    const option = document.createElement('option');
+    option.value = room;
+    option.textContent = room;
+    bookingRoom.appendChild(option);
   });
+}
 
-  document.querySelectorAll('nav a').forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      const target = link.getAttribute('href').substring(1);
-      document.querySelectorAll('main').forEach(m => m.style.display = 'none');
-      document.getElementById(target).style.display = 'block';
-    });
+function renderUsers() {
+  const userList = document.getElementById('userList');
+  userList.innerHTML = '';
+  const users = data[currentSite].users;
+  for (const u in users) {
+    const li = document.createElement('li');
+    li.textContent = `${u} (${users[u].role})`;
+    userList.appendChild(li);
+  }
+}
+
+function renderPending() {
+  const list = document.getElementById('pendingList');
+  list.innerHTML = '';
+  data[currentSite].pending.forEach((b, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `${b.date} – ${b.room} – ${b.period} – ${b.user} 
+      <button onclick="approveBooking(${i})">Approve</button> 
+      <button onclick="declineBooking(${i})">Decline</button>`;
+    list.appendChild(li);
   });
+}
 
-  // Login and Redirect Logic
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log("Page loaded");
+function renderCalendar() {
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+  for (let i = 1; i <= 30; i++) {
+    const date = `2025-05-${String(i).padStart(2, '0')}`;
+    const div = document.createElement('div');
+    div.className = 'day';
+    const todayBookings = data[currentSite].bookings.filter(b => b.date === date);
+    div.innerHTML = `<strong>May ${i}</strong><br>` +
+      (todayBookings.length ? todayBookings.map(b => `${b.room} – ${b.period} – ${b.user}`).join('<br>') : 'No bookings');
+    cal.appendChild(div);
+  }
+}
 
-    loginBtn.onclick = () => {
-      if (!isSigningIn) {
-        isSigningIn = true;
-        console.log("Signing in...");
-        signInWithRedirect(auth, provider).finally(() => {
-          isSigningIn = false;
-        });
-      } else {
-        console.log("Sign-in already in progress.");
-      }
-    };
+/* =======================
+ SAVE DATA (LOCAL STORAGE)
+======================= */
 
-    logoutBtn.onclick = () => {
-      console.log("Signing out...");
-      signOut(auth);
-    };
+function saveData() {
+  localStorage.setItem('bookingData', JSON.stringify(data));
 
-    getRedirectResult(auth)
-      .then((result) => {
-        console.log("getRedirectResult promise resolved.");
-        if (result && result.user) {
-          console.log("Redirect sign-in successful:", result.user);
-        } else {
-          console.log("No redirect result.");
-        }
-        setupAuthStateListener();
-      })
-      .catch((error) => {
-        console.error("Redirect error:", error);
-        alert("Redirect failed: " + error.message);
-        setupAuthStateListener();
-      });
-
-    function setupAuthStateListener() {
-      console.log("setupAuthStateListener called");
-
-      onAuthStateChanged(auth, (user) => {
-        console.log("onAuthStateChanged triggered. User:", user);
-
-        if (user) {
-          const role = "admin"; // Hardcoded
-          authPanel.classList.add("hidden");
-          appPanel.classList.remove("hidden");
-          userInfo.textContent = `Logged in as ${user.displayName} (${role})`;
-          document.getElementById('admin').style.display = role === 'admin' ? 'block' : 'none';
-          document.getElementById('bookings').style.display = (role === 'admin' || role === 'teacher') ? 'block' : 'none';
-          document.getElementById('home').style.display = 'block';
-        } else {
-          authPanel.classList.remove("hidden");
-          appPanel.classList.add("hidden");
-          userInfo.textContent = "";
-        }
-      });
-    }
-
-    populateRooms();
-    renderRoomList();
-    renderCalendar();
-  });
+  /*
+  ======== SERVER INTEGRATION START ========
+  Future: Replace localStorage save with server-side API call here.
+  Example:
+  sendDataToServer(data[currentSite]);
+  ======== SERVER INTEGRATION END ========
+  */
+}
 </script>
 </body>
 </html>
