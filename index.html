@@ -109,8 +109,15 @@
     <button onclick="logout()">Logout</button>
     <hr>
 
-    <!-- Admin Panel -->
-    <div id="adminPanel" style="display:none;">
+    <!-- ===== APP INTERNAL NAVIGATION ===== -->
+    <nav>
+        <button onclick="showAppTab('adminInnerTab')" id="adminBtn">Admin Panel</button>
+        <button onclick="showAppTab('bookingInnerTab')" id="bookingBtn">Room Booking</button>
+        <button onclick="showAppTab('calendarInnerTab')" id="calendarBtn">Calendar</button>
+    </nav>
+
+    <!-- ===== ADMIN PANEL ===== -->
+    <div id="adminInnerTab" class="innerTab">
         <h3>Admin Panel</h3>
 
         <!-- Export / Import -->
@@ -119,15 +126,13 @@
 
         <!-- Change Site Color -->
         <h4>Site Color</h4>
-        <input type="color" id="siteColorPicker" value="#4CAF50" onchange="changeSiteColor()">
-        <br><br>
+        <input type="color" id="siteColorPicker" value="#4CAF50" onchange="changeSiteColor()"><br><br>
 
         <!-- Create Room -->
         <h4>Create Room</h4>
         <input type="text" id="newRoomName" placeholder="Room name">
         <button onclick="addRoom()">Add Room</button>
-        <ul id="roomList"></ul>
-        <br>
+        <ul id="roomList"></ul><br>
 
         <!-- Bulk User Creation -->
         <h4>Bulk User Creation</h4>
@@ -135,30 +140,28 @@
         <button onclick="createUsers()">Create Users</button>
     </div>
 
-    <hr>
+    <!-- ===== BOOKING TAB ===== -->
+    <div id="bookingInnerTab" class="innerTab" style="display:none;">
+        <h3>Book a Room</h3>
+        <input type="date" id="date"><br>
+        <select id="room"></select><br>
+        <select id="period">
+            <option>Period 1</option>
+            <option>Period 2</option>
+            <option>Period 3</option>
+            <option>Lunch</option>
+            <option>Period 4</option>
+        </select><br>
+        <button onclick="book()">Submit Booking</button>
+        <ul id="pendingList"></ul>
+    </div>
 
-    <!-- Room Booking -->
-    <h3>Book a Room</h3>
-    <input type="date" id="date"><br>
-    <select id="room"></select><br>
-    <select id="period">
-        <option>Period 1</option>
-        <option>Period 2</option>
-        <option>Period 3</option>
-        <option>Lunch</option>
-        <option>Period 4</option>
-    </select><br>
-    <button onclick="book()">Submit Booking</button>
-
-    <ul id="pendingList"></ul>
-
-    <hr>
-
-    <!-- Calendar -->
-    <h3>Booking Calendar</h3>
-    <div id="calendar"></div>
+    <!-- ===== CALENDAR TAB ===== -->
+    <div id="calendarInnerTab" class="innerTab" style="display:none;">
+        <h3>Booking Calendar</h3>
+        <div id="calendar"></div>
+    </div>
 </section>
-
 <!-- ======== JAVASCRIPT ======== -->
 <script>
 /* ======= DATA STRUCTURES ======= */
