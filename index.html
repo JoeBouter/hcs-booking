@@ -404,11 +404,11 @@ function renderCalendar() {
         let baseColor = siteData.calendarColor;
         let color = baseColor;
         if (dateObj < today.setHours(0,0,0,0)) {
-            color = shadeColor(baseColor, 30); // Past = darker
+            color = shadeColor(baseColor, -40); // Past = darker
         } else if (dateObj.toDateString() === new Date().toDateString()) {
-            color = shadeColor(baseColor, 50); // Today = exact
+            color = shadeColor(baseColor, 10); // Today = exact
         } else {
-            color = shadeColor(baseColor, 90); // Future = lighter
+            color = shadeColor(baseColor, 60); // Future = lighter
         }
 
         day.style.backgroundColor = color;
