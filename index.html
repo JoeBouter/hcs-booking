@@ -405,7 +405,7 @@ function renderCalendar() {
         let color = baseColor;
         if (dateObj < today.setHours(0,0,0,0)) {
             color = shadeColor(baseColor, 0); // Past = darker
-        } else if (dateObj = today.setHours(0,0,0,0)) {
+        } else if (dateObj.toDateString() === new Date().toDateString()) {
             color = shadeColor(baseColor, 20); // Today = exact
         } else {
             color = shadeColor(baseColor, 40); // Future = lighter
