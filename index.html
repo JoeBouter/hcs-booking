@@ -297,6 +297,7 @@ function changeCalendarColor() {
     siteData.calendarColor = color;
     saveData();
     document.documentElement.style.setProperty('--secondary-color', color);
+    renderCalendar();
 }
 /*******************************
     ADMIN: Rooms & Users
