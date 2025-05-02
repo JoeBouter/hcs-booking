@@ -7,7 +7,7 @@
 <style>
   :root {
     --primary-color: navy;
-    --accent-color: crimson;
+    --secondary-color: crimson;
   }
 
   body {
@@ -40,7 +40,7 @@
   }
 
   nav button.active {
-    background-color: var(--accent-color);
+    background-color: var(--secondary-color);
   }
 
   main {
@@ -127,15 +127,18 @@
 <!-- ======= APP SCREEN ======= -->
 <main id="appScreen">
   <h2>Welcome, <span id="currentUser"></span></h2>
-
   <!-- ADMIN PANEL -->
   <section id="adminPanel" class="app-tab active">
     <h3>Admin Panel</h3>
     <button class="btn" onclick="exportData()">Export Data</button>
     <input type="file" onchange="importData(event)">
     <br><br>
-    <label>Site Color:</label>
-    <input type="color" id="siteColor" onchange="changeSiteColor()"><br><br>
+
+    <label>Primary Color:</label>
+    <input type="color" id="siteColor" onchange="changeSiteColor()"><br>
+
+    <label>Secondary Color (Calendar):</label>
+    <input type="color" id="calendarColor" onchange="changeCalendarColor()"><br><br>
 
     <div class="admin-section">
       <h4>Create Room</h4>
@@ -175,181 +178,301 @@
   <!-- CALENDAR PANEL -->
   <section id="calendarPanel" class="app-tab" style="display:none;">
     <h3>Booking Calendar</h3>
+    <div>
+      <button onclick="changeMonth(-1)">Previous Month</button>
+      <button onclick="changeMonth(1)">Next Month</button>
+    </div>
     <div class="calendar-grid" id="calendarGrid"></div>
   </section>
 
-</main>
-
+</main> <!-- Close appScreen -->
 <script>
 /* ====================== DATA ====================== */
-let siteData = JSON.parse(localStorage.getItem('siteData')) || {siteName:'Default Site', users:[], rooms:[], bookings:[], color:'#000080'};
+let siteData = JSON.parse(localStorage.getItem('siteData')) || {
+    siteName: 'Default Site',
+    users: [],
+    rooms: [],
+    bookings: [],
+    color: '#000080',
+    calendarColor: '#DC143C'
+};
 let currentUser = null;
 
-/* ====================== UTILITIES ====================== */
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+
+/* ====================== SAVE ====================== */
 function saveData() {
-  localStorage.setItem('siteData', JSON.stringify(siteData));
+    localStorage.setItem('siteData', JSON.stringify(siteData));
 }
 
+/* ====================== SCREENS ====================== */
 function showScreen(screen) {
-  document.querySelectorAll('main').forEach(m => m.classList.remove('active'));
-  document.getElementById(screen).classList.add('active');
+    document.querySelectorAll('main').forEach(m => m.classList.remove('active'));
+    document.getElementById(screen).classList.add('active');
 }
 
 /* ====================== REGISTER ====================== */
 function register() {
-  const site = document.getElementById('registerSite').value.trim();
-  const user = document.getElementById('registerUsername').value.trim();
-  const pass = document.getElementById('registerPassword').value.trim();
-  if (!site || !user || !pass) return alert("Fill in all fields.");
-  siteData = {siteName: site, users:[{username:user,password:pass,role:'admin'}], rooms:[], bookings:[], color:'#000080'};
-  saveData();
-  alert("Site registered.");
-  showScreen('loginScreen');
+    const site = document.getElementById('registerSite').value.trim();
+    const user = document.getElementById('registerUsername').value.trim();
+    const pass = document.getElementById('registerPassword').value.trim();
+    if (!site || !user || !pass) return alert("Fill in all fields.");
+    siteData = {
+        siteName: site,
+        users: [{username:user,password:pass,role:'admin'}],
+        rooms: [],
+        bookings: [],
+        color: '#000080',
+        calendarColor: '#DC143C'
+    };
+    saveData();
+    alert("Site registered.");
+    showScreen('loginScreen');
 }
 
 /* ====================== LOGIN ====================== */
 function login() {
-  const user = document.getElementById('loginUsername').value.trim();
-  const pass = document.getElementById('loginPassword').value.trim();
-  const found = siteData.users.find(u => u.username===user && u.password===pass);
-  if (!found) return alert("Invalid credentials.");
-  currentUser = found;
-  document.getElementById('currentUser').textContent = `${found.username} (${found.role})`;
-  showScreen('appScreen');
-  document.getElementById('navGuest').style.display = 'none';
-  document.getElementById('navUser').style.display = 'inline';
-  loadApp();
+    const user = document.getElementById('loginUsername').value.trim();
+    const pass = document.getElementById('loginPassword').value.trim();
+    const found = siteData.users.find(u => u.username===user && u.password===pass);
+    if (!found) return alert("Invalid credentials.");
+    currentUser = found;
+    document.getElementById('currentUser').textContent = `${found.username} (${found.role})`;
+    showScreen('appScreen');
+    document.getElementById('navGuest').style.display = 'none';
+    document.getElementById('navUser').style.display = 'inline';
+    loadApp();
 }
 
 /* ====================== LOGOUT ====================== */
 function logout() {
-  currentUser = null;
-  showScreen('loginScreen');
-  document.getElementById('navGuest').style.display = 'inline';
-  document.getElementById('navUser').style.display = 'none';
+    currentUser = null;
+    showScreen('loginScreen');
+    document.getElementById('navGuest').style.display = 'inline';
+    document.getElementById('navUser').style.display = 'none';
 }
 
 /* ====================== APP SETUP ====================== */
 function loadApp() {
-  changeSiteColor();
-  populateRooms();
-  populateUsers();
-  renderCalendar();
-  showAppTab('adminPanel');
+    changeSiteColor();
+    changeCalendarColor();
+    populateRooms();
+    populateUsers();
+    renderCalendar();
+    updateRoleVisibility();
+    showAppTab('calendarPanel'); // Default tab
+}
+
+/* ====================== ROLES ====================== */
+function updateRoleVisibility() {
+    document.querySelector('button[onclick="showAppTab(\'adminPanel\')"]').style.display =
+      (currentUser.role === 'admin') ? 'inline' : 'none';
+
+    document.querySelector('button[onclick="showAppTab(\'bookingPanel\')"]').style.display =
+      (currentUser.role === 'admin' || currentUser.role === 'teacher') ? 'inline' : 'none';
 }
 
 /* ====================== NAV TABS ====================== */
 function showAppTab(tabId) {
-  ['adminPanel', 'bookingPanel', 'calendarPanel'].forEach(id => {
-    document.getElementById(id).style.display = (id === tabId) ? 'block' : 'none';
-  });
+    ['adminPanel', 'bookingPanel', 'calendarPanel'].forEach(id => {
+        document.getElementById(id).style.display = (id === tabId) ? 'block' : 'none';
+    });
 }
 
-/* ====================== ADMIN ====================== */
+/* ====================== COLORS ====================== */
 function changeSiteColor() {
-  let color = siteData.color;
-  const picker = document.getElementById('siteColor');
-  if (picker.value) color = picker.value;
-  siteData.color = color;
-  saveData();
-  document.documentElement.style.setProperty('--primary-color', color);
+    let color = siteData.color;
+    const picker = document.getElementById('siteColor');
+    if (picker.value) color = picker.value;
+    siteData.color = color;
+    saveData();
+    document.documentElement.style.setProperty('--primary-color', color);
 }
 
+function changeCalendarColor() {
+    let color = siteData.calendarColor;
+    const picker = document.getElementById('calendarColor');
+    if (picker.value) color = picker.value;
+    siteData.calendarColor = color;
+    saveData();
+    document.documentElement.style.setProperty('--secondary-color', color);
+}
+/*******************************
+    ADMIN: Rooms & Users
+********************************/
 function addRoom() {
-  const name = document.getElementById('newRoomName').value.trim();
-  if (!name || siteData.rooms.includes(name)) return;
-  siteData.rooms.push(name);
-  saveData();
-  populateRooms();
-  renderCalendar();
+    const name = document.getElementById('newRoomName').value.trim();
+    if (!name || siteData.rooms.includes(name)) return;
+    siteData.rooms.push(name);
+    saveData();
+    populateRooms();
+    renderCalendar();
 }
 
 function populateRooms() {
-  const roomList = document.getElementById('roomList');
-  const roomSelect = document.getElementById('roomSelect');
-  roomList.innerHTML = '';
-  roomSelect.innerHTML = '';
-  siteData.rooms.forEach(r => {
-    const li = document.createElement('li');
-    li.textContent = r;
-    roomList.appendChild(li);
-    const opt = document.createElement('option');
-    opt.value = r;
-    opt.textContent = r;
-    roomSelect.appendChild(opt);
-  });
+    const roomList = document.getElementById('roomList');
+    const roomSelect = document.getElementById('roomSelect');
+    roomList.innerHTML = '';
+    roomSelect.innerHTML = '';
+    siteData.rooms.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = r;
+        roomList.appendChild(li);
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r;
+        roomSelect.appendChild(opt);
+    });
 }
 
 function bulkCreateUsers() {
-  const text = document.getElementById('bulkUsers').value.trim();
-  const entries = text.split(',');
-  for (let i = 0; i < entries.length; i += 3) {
-    const role = entries[i]?.trim();
-    const username = entries[i+1]?.trim();
-    const password = entries[i+2]?.trim();
-    if (role && username && password) {
-      siteData.users.push({username,password,role: (role==='A'?'admin':role==='T'?'teacher':'student')});
+    const text = document.getElementById('bulkUsers').value.trim();
+    const entries = text.split(',');
+    for (let i = 0; i < entries.length; i += 3) {
+        const role = entries[i]?.trim();
+        const username = entries[i+1]?.trim();
+        const password = entries[i+2]?.trim();
+        if (role && username && password) {
+            siteData.users.push({
+                username,
+                password,
+                role: (role==='A'?'admin':role==='T'?'teacher':'student')
+            });
+        }
     }
-  }
-  saveData();
-  populateUsers();
+    saveData();
+    populateUsers();
 }
 
 function populateUsers() {
-  const ul = document.getElementById('userList');
-  ul.innerHTML = '';
-  siteData.users.forEach(u => {
-    const li = document.createElement('li');
-    li.textContent = `${u.username} (${u.role})`;
-    ul.appendChild(li);
-  });
+    const ul = document.getElementById('userList');
+    ul.innerHTML = '';
+    siteData.users.forEach(u => {
+        const li = document.createElement('li');
+        li.textContent = `${u.username} (${u.role})`;
+        ul.appendChild(li);
+    });
 }
 
-/* ====================== BOOKING ====================== */
+/*******************************
+    BOOKING
+********************************/
 function submitBooking(e) {
-  e.preventDefault();
-  const date = document.getElementById('date').value;
-  const room = document.getElementById('roomSelect').value;
-  const period = document.getElementById('period').value;
-  siteData.bookings.push({date, room, period, user:currentUser.username});
-  saveData();
-  renderCalendar();
+    e.preventDefault();
+    const date = document.getElementById('date').value;
+    const room = document.getElementById('roomSelect').value;
+    const period = document.getElementById('period').value;
+
+    // Check for double booking:
+    const clash = siteData.bookings.find(b => b.date === date && b.room === room && b.period === period);
+    if (clash) {
+        alert("This room is already booked for that period!");
+        return;
+    }
+
+    siteData.bookings.push({
+        date,
+        room,
+        period,
+        user: currentUser.username
+    });
+
+    saveData();
+    renderCalendar();
 }
 
+/*******************************
+    CALENDAR RENDERING
+********************************/
 function renderCalendar() {
-  const grid = document.getElementById('calendarGrid');
-  grid.innerHTML = '';
-  for (let i = 1; i <= 30; i++) {
-    const date = `2025-05-${String(i).padStart(2, '0')}`;
-    const day = document.createElement('div');
-    day.className = 'day';
-    const bookings = siteData.bookings.filter(b => b.date === date);
-    day.innerHTML = `<strong>May ${i}</strong><br>` +
-      (bookings.length ? bookings.map(b=>`${b.room} – ${b.period} – ${b.user}`).join('<br>') : 'No bookings');
-    grid.appendChild(day);
-  }
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const today = new Date();
+
+    for (let i = 1; i <= daysInMonth; i++) {
+        const dateObj = new Date(currentYear, currentMonth, i);
+        const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+
+        const day = document.createElement('div');
+        day.className = 'day';
+
+        // Color shading:
+        let baseColor = siteData.calendarColor;
+        let color = baseColor;
+        if (dateObj < today.setHours(0,0,0,0)) {
+            color = shadeColor(baseColor, -40); // Past = darker
+        } else if (dateObj.toDateString() === new Date().toDateString()) {
+            color = baseColor; // Today = exact
+        } else {
+            color = shadeColor(baseColor, 40); // Future = lighter
+        }
+
+        day.style.backgroundColor = color;
+
+        // Bookings:
+        const bookings = siteData.bookings.filter(b => b.date === dateStr);
+        day.innerHTML = `<strong>${dateObj.toDateString()}</strong><br>` +
+            (bookings.length ? bookings.map(b => `${b.room} – ${b.period} – ${b.user}`).join('<br>') : 'No bookings');
+
+        grid.appendChild(day);
+    }
 }
 
-/* ====================== IMPORT/EXPORT ====================== */
+/*******************************
+    MONTH NAVIGATION
+********************************/
+function changeMonth(offset) {
+    currentMonth += offset;
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    } else if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+    renderCalendar();
+}
+
+/*******************************
+    COLOR SHADING FUNCTION
+********************************/
+function shadeColor(color, percent) {
+    const num = parseInt(color.replace("#",""),16),
+          amt = Math.round(2.55 * percent),
+          R = (num >> 16) + amt,
+          G = (num >> 8 & 0x00FF) + amt,
+          B = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 +
+        (R<255?R<1?0:R:255)*0x10000 +
+        (G<255?G<1?0:G:255)*0x100 +
+        (B<255?B<1?0:B:255))
+        .toString(16).slice(1);
+}
+
+/*******************************
+    IMPORT / EXPORT
+********************************/
 function exportData() {
-  const blob = new Blob([JSON.stringify(siteData)], {type:"application/json"});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'siteData.json';
-  a.click();
+    const blob = new Blob([JSON.stringify(siteData)], {type:"application/json"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'siteData.json';
+    a.click();
 }
 
 function importData(e) {
-  const file = e.target.files[0];
-  const reader = new FileReader();
-  reader.onload = function() {
-    siteData = JSON.parse(reader.result);
-    saveData();
-    loadApp();
-  };
-  reader.readAsText(file);
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function() {
+        siteData = JSON.parse(reader.result);
+        saveData();
+        loadApp();
+    };
+    reader.readAsText(file);
 }
-
 </script>
 </body>
 </html>
