@@ -1392,7 +1392,7 @@
   const calendarGrid = document.getElementById('calendarGrid');
   calendarGrid.innerHTML = '';
 
-  // Create header row
+  // Header row for days of the week
   ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
     const div = document.createElement('div');
     div.className = 'text-center font-medium py-2 bg-gray-100 dark:bg-gray-700';
@@ -1400,39 +1400,50 @@
     calendarGrid.appendChild(div);
   });
 
-  // Create date grid
+  // First day of the month
   const date = new Date(currentYear, currentMonth, 1);
-  
-  // Add empty cells for days before the first day
-  for (let i = 0; i < date.getDay(); i++) {
-    calendarGrid.appendChild(document.createElement('div'));
+  const firstDayIndex = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+  // Add empty cells for days before the first day of the month
+  for (let i = 0; i < firstDayIndex; i++) {
+    const emptyCell = document.createElement('div');
+    calendarGrid.appendChild(emptyCell);
   }
 
-  // Add days of the month
-  while (date.getMonth() === currentMonth) {
+  // Number of days in the month
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Add day cells
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cellDate = new Date(currentYear, currentMonth, day);
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day p-2 border rounded-md cursor-pointer hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600';
-    dayDiv.textContent = date.getDate();
-    
-    // Add date-specific styling
+    dayDiv.textContent = day;
+
+    // Highlight today's date
     const today = new Date();
-    if (date.toDateString() === today.toDateString()) {
+    if (
+      cellDate.getDate() === today.getDate() &&
+      cellDate.getMonth() === today.getMonth() &&
+      cellDate.getFullYear() === today.getFullYear()
+    ) {
       dayDiv.classList.add('bg-indigo-100', 'dark:bg-indigo-900');
     }
-    if (isWeekend(date)) {
+
+    // Weekend and holiday styling
+    if (isWeekend(cellDate)) {
       dayDiv.classList.add('weekend-day');
     }
-    if (isHoliday(date)) {
+    if (isHoliday(cellDate)) {
       dayDiv.classList.add('holiday-day');
     }
-    
+
     calendarGrid.appendChild(dayDiv);
-    date.setDate(date.getDate() + 1);
   }
 
-  // Update month/year display
-  document.getElementById('currentMonthYear').textContent = 
-    `${date.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+  // Update month/year text properly
+  const monthName = date.toLocaleString('default', { month: 'long' });
+  document.getElementById('currentMonthYear').textContent = `${monthName} ${currentYear}`;
 }
 
     function changeMonth(offset) {
