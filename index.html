@@ -1389,46 +1389,51 @@
 
     /* ====================== CALENDAR FUNCTIONS ====================== */
     function renderCalendar() {
-      const calendarGrid = document.getElementById('calendarGrid');
-      const currentDate = new Date(currentYear, currentMonth, 1);
-      
-      calendarGrid.innerHTML = '';
-      
-      // Add day headers
-      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
-        const div = document.createElement('div');
-        div.className = 'text-center font-medium py-2 bg-gray-100 dark:bg-gray-700';
-        div.textContent = day;
-        calendarGrid.appendChild(div);
-      });
-      
-      // Add empty days
-      for (let i = 0; i < currentDate.getDay(); i++) {
-        calendarGrid.appendChild(document.createElement('div'));
-      }
-      
-      // Add days
-      while (currentDate.getMonth() === currentMonth) {
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'calendar-day p-2 border rounded-md cursor-pointer hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600';
-        dayDiv.textContent = currentDate.getDate();
-        
-        if (isWeekend(currentDate)) {
-          dayDiv.classList.add('weekend-day');
-        }
-        if (isHoliday(currentDate)) {
-          dayDiv.classList.add('holiday-day');
-        }
-        
-        dayDiv.addEventListener('click', () => showDayBookings(new Date(currentDate)));
-        calendarGrid.appendChild(dayDiv);
-        
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      
-      document.getElementById('currentMonthYear').textContent = 
-        `${currentDate.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+  const calendarGrid = document.getElementById('calendarGrid');
+  calendarGrid.innerHTML = '';
+
+  // Create header row
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+    const div = document.createElement('div');
+    div.className = 'text-center font-medium py-2 bg-gray-100 dark:bg-gray-700';
+    div.textContent = day;
+    calendarGrid.appendChild(div);
+  });
+
+  // Create date grid
+  const date = new Date(currentYear, currentMonth, 1);
+  
+  // Add empty cells for days before the first day
+  for (let i = 0; i < date.getDay(); i++) {
+    calendarGrid.appendChild(document.createElement('div'));
+  }
+
+  // Add days of the month
+  while (date.getMonth() === currentMonth) {
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'calendar-day p-2 border rounded-md cursor-pointer hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600';
+    dayDiv.textContent = date.getDate();
+    
+    // Add date-specific styling
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) {
+      dayDiv.classList.add('bg-indigo-100', 'dark:bg-indigo-900');
     }
+    if (isWeekend(date)) {
+      dayDiv.classList.add('weekend-day');
+    }
+    if (isHoliday(date)) {
+      dayDiv.classList.add('holiday-day');
+    }
+    
+    calendarGrid.appendChild(dayDiv);
+    date.setDate(date.getDate() + 1);
+  }
+
+  // Update month/year display
+  document.getElementById('currentMonthYear').textContent = 
+    `${date.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+}
 
     function changeMonth(offset) {
       currentMonth += offset;
@@ -1490,6 +1495,25 @@
       loadUsers();
       renderCalendar();
     }
+	function changeMonth(offset) {
+  currentMonth += offset;
+  if (currentMonth > 11) {
+    currentMonth = 0;
+    currentYear++;
+  } else if (currentMonth < 0) {
+    currentMonth = 11;
+    currentYear--;
+  }
+  renderCalendar();
+}
+
+function isWeekend(date) {
+  return date.getDay() === 0 || date.getDay() === 6;
+}
+
+function isHoliday(date) {
+  return siteData.holidays.some(h => h.date === date.toISOString().split('T')[0]);
+}
   </script>
 </body>
 </html>
