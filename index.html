@@ -16,7 +16,34 @@
     body {
       font-family: var(--font-family);
     }
-    
+
+    .calendar-day {
+    min-height: 80px;
+    color: #374151; /* gray-700 */
+    background-color: white;
+  }
+
+  .dark-mode .calendar-day {
+    color: #f3f4f6; /* gray-100 */
+    background-color: #374151; /* gray-700 */
+  }
+
+  .weekend-day {
+    background-color: #f8fafc; /* gray-50 */
+  }
+
+  .dark-mode .weekend-day {
+    background-color: #1f2937; /* gray-800 */
+  }
+
+  .holiday-day {
+  background-color: #fff1f2; /* rose-50 */
+  }
+  
+  .dark-mode .holiday-day {
+    background-color: #4c0519; /* rose-950 */
+  }
+      
     .fade-in {
       animation: fadeIn 0.3s ease-in-out;
     }
