@@ -1169,226 +1169,300 @@
         ],
         holidays: [],
         color: '#4f46e5',
-        calendarColor: '#7c3aed',
-announcement: '',
-logo: null,
-maxAdvanceDays: 30
+	calendarColor: '#7c3aed',
+        announcement: '',
+        logo: null,
+        maxAdvanceDays: 30
       };
-
+      
       saveData();
-
-      currentUser = {
-        username: user,
-        role: 'admin'
-      };
+      currentUser = siteData.users[0];
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-      showToast("Site created and logged in as admin.");
       showAppScreen();
+      showToast('Registration successful!');
     }
 
-function login() {
-  const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value.trim();
+    function login() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      
+      const user = siteData.users.find(u => u.username === username && u.password === password);
+      
+      if (user) {
+        currentUser = user;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        showAppScreen();
+        showToast('Login successful!');
+      } else {
+        showToast('Invalid username or password');
+      }
+    }
 
-  const user = siteData.users.find(u => u.username === username && u.password === password);
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
+      showScreen('loginScreen');
+      document.getElementById('navGuest').classList.remove('hidden');
+      document.getElementById('navUser').classList.add('hidden');
+      document.getElementById('userInfo').classList.add('hidden');
+      showToast('Logged out successfully');
+    }
 
-  if (!user) {
-    showToast("Invalid username or password.");
-    return;
-  }
+    /* ====================== ADMIN FUNCTIONS ====================== */
+    function updateSiteTitle() {
+      const newTitle = document.getElementById('siteTitle').value;
+      siteData.siteName = newTitle;
+      document.getElementById('siteTitle').textContent = newTitle;
+      saveData();
+      showToast('Site title updated!');
+    }
 
-  currentUser = user;
-  localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    function uploadLogo(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          siteData.logo = e.target.result;
+          document.getElementById('logoPreview').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+          saveData();
+          showToast('Logo uploaded successfully!');
+        }
+        reader.readAsDataURL(file);
+      }
+    }
 
-  showToast(`Welcome ${user.username}!`);
-  showAppScreen();
-}
+    function changeSiteColor() {
+      const color = document.getElementById('siteColor').value;
+      document.documentElement.style.setProperty('--primary-color', color);
+      siteData.color = color;
+      saveData();
+    }
 
-function logout() {
-  localStorage.removeItem('currentUser');
-  currentUser = null;
-  showScreen('loginScreen');
-  document.getElementById('navGuest').classList.remove('hidden');
-  document.getElementById('navUser').classList.add('hidden');
-  document.getElementById('userInfo').classList.add('hidden');
-}
+    function changeCalendarColor() {
+      const color = document.getElementById('calendarColor').value;
+      document.documentElement.style.setProperty('--calendar-color', color);
+      siteData.calendarColor = color;
+      saveData();
+    }
 
-function saveData() {
-  localStorage.setItem('siteData', JSON.stringify(siteData));
-}
+    function updateAnnouncement() {
+      siteData.announcement = document.getElementById('announcementInput').value;
+      saveData();
+      showToast('Announcement updated!');
+    }
 
-function updateSiteTitle() {
-  const title = document.getElementById('siteTitle').value.trim();
-  siteData.siteName = title || 'Classroom Booking System';
-  document.getElementById('siteTitle').textContent = siteData.siteName;
-  saveData();
-}
+    /* ====================== ROOM MANAGEMENT ====================== */
+    function addRoom() {
+      const name = document.getElementById('newRoomName').value.trim();
+      const capacity = document.getElementById('roomCapacity').value;
+      const access = document.getElementById('roomAccess').value;
+      const approval = document.getElementById('roomApproval').value === 'yes';
+      
+      if (!name) {
+        showToast('Please enter a room name');
+        return;
+      }
+      
+      const newRoom = {
+        id: generateId(),
+        name,
+        capacity: parseInt(capacity) || null,
+        access,
+        requiresApproval: approval
+      };
+      
+      siteData.rooms.push(newRoom);
+      saveData();
+      loadRooms();
+      showToast('Room added successfully!');
+    }
 
-function changeSiteColor() {
-  const color = document.getElementById('siteColor').value;
-  siteData.color = color;
-  document.documentElement.style.setProperty('--primary-color', color);
-  saveData();
-}
+    function loadRooms() {
+      const roomList = document.getElementById('roomList');
+      roomList.innerHTML = '';
+      
+      siteData.rooms.forEach(room => {
+        const li = document.createElement('li');
+        li.className = 'bg-white p-3 rounded-md shadow-sm flex justify-between items-center dark:bg-gray-600';
+        li.innerHTML = `
+          <div>
+            <span class="font-medium">${room.name}</span>
+            ${room.capacity ? `<span class="text-sm text-gray-500 ml-2">(${room.capacity} seats)</span>` : ''}
+          </div>
+          <button onclick="deleteRoom('${room.id}')" class="text-red-600 hover:text-red-800">
+            <i class="fas fa-trash"></i>
+          </button>
+        `;
+        roomList.appendChild(li);
+      });
+    }
 
-function changeCalendarColor() {
-  const color = document.getElementById('calendarColor').value;
-  siteData.calendarColor = color;
-  document.documentElement.style.setProperty('--calendar-color', color);
-  saveData();
-}
+    function deleteRoom(roomId) {
+      siteData.rooms = siteData.rooms.filter(room => room.id !== roomId);
+      saveData();
+      loadRooms();
+      showToast('Room deleted successfully');
+    }
 
-function updateAnnouncement() {
-  const text = document.getElementById('announcementInput').value;
-  siteData.announcement = text;
-  saveData();
-  document.getElementById('announcementText').textContent = text;
-  document.getElementById('announcementBanner').classList.remove('hidden');
-}
+    /* ====================== USER MANAGEMENT ====================== */
+    function createUser() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value.trim();
+      const email = document.getElementById('newEmail').value.trim();
+      const role = document.getElementById('newRole').value;
+      
+      if (!username || !password) {
+        showToast('Username and password are required');
+        return;
+      }
+      
+      const newUser = {
+        username,
+        password,
+        role,
+        email: email || null,
+        avatar: null
+      };
+      
+      siteData.users.push(newUser);
+      saveData();
+      loadUsers();
+      showToast('User created successfully!');
+    }
 
-function addRoom() {
-  const name = document.getElementById('newRoomName').value.trim();
-  const capacity = parseInt(document.getElementById('roomCapacity').value) || null;
-  const access = document.getElementById('roomAccess').value;
-  const approval = document.getElementById('roomApproval').value === 'yes';
+    function loadUsers() {
+      const userList = document.getElementById('userList');
+      userList.innerHTML = '';
+      
+      siteData.users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap">${user.username}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${user.role}</td>
+          <td class="px-6 py-4 whitespace-nowrap">${user.email || '-'}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <button class="text-indigo-600 hover:text-indigo-900" onclick="editUser('${user.username}')">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="text-red-600 hover:text-red-900 ml-2" onclick="deleteUser('${user.username}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        `;
+        userList.appendChild(tr);
+      });
+    }
 
-  if (!name) {
-    showToast("Room name required.");
-    return;
-  }
+    function deleteUser(username) {
+      siteData.users = siteData.users.filter(user => user.username !== username);
+      saveData();
+      loadUsers();
+      showToast('User deleted successfully');
+    }
 
-  if (siteData.rooms.some(r => r.name === name)) {
-    showToast("Room already exists.");
-    return;
-  }
+    /* ====================== CALENDAR FUNCTIONS ====================== */
+    function renderCalendar() {
+      const calendarGrid = document.getElementById('calendarGrid');
+      const currentDate = new Date(currentYear, currentMonth, 1);
+      
+      calendarGrid.innerHTML = '';
+      
+      // Add day headers
+      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+        const div = document.createElement('div');
+        div.className = 'text-center font-medium py-2 bg-gray-100 dark:bg-gray-700';
+        div.textContent = day;
+        calendarGrid.appendChild(div);
+      });
+      
+      // Add empty days
+      for (let i = 0; i < currentDate.getDay(); i++) {
+        calendarGrid.appendChild(document.createElement('div'));
+      }
+      
+      // Add days
+      while (currentDate.getMonth() === currentMonth) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day p-2 border rounded-md cursor-pointer hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600';
+        dayDiv.textContent = currentDate.getDate();
+        
+        if (isWeekend(currentDate)) {
+          dayDiv.classList.add('weekend-day');
+        }
+        if (isHoliday(currentDate)) {
+          dayDiv.classList.add('holiday-day');
+        }
+        
+        dayDiv.addEventListener('click', () => showDayBookings(new Date(currentDate)));
+        calendarGrid.appendChild(dayDiv);
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      document.getElementById('currentMonthYear').textContent = 
+        `${currentDate.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+    }
 
-  siteData.rooms.push({
-    name: name,
-    capacity: capacity,
-    access: access,
-    approval: approval
-  });
+    function changeMonth(offset) {
+      currentMonth += offset;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      } else if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    }
 
-  saveData();
-  renderRooms();
-  showToast("Room added.");
-}
+    /* ====================== BOOKING FUNCTIONS ====================== */
+    function submitBooking(event) {
+      event.preventDefault();
+      const date = document.getElementById('date').value;
+      const room = document.getElementById('roomSelect').value;
+      const period = document.getElementById('period').value;
+      const notes = document.getElementById('bookingNotes').value;
+      
+      const newBooking = {
+        id: generateId(),
+        date,
+        room,
+        period,
+        notes,
+        user: currentUser.username,
+        status: 'pending',
+        timestamp: new Date().toISOString()
+      };
+      
+      siteData.bookings.push(newBooking);
+      saveData();
+      showToast('Booking submitted for approval!');
+      document.getElementById('bookingForm').reset();
+    }
 
-function createUser() {
-  const username = document.getElementById('newUsername').value.trim();
-  const password = document.getElementById('newPassword').value.trim();
-  const email = document.getElementById('newEmail').value.trim();
-  const role = document.getElementById('newRole').value;
+    function approveBooking() {
+      selectedBooking.status = 'approved';
+      saveData();
+      closeModal();
+      showToast('Booking approved!');
+      renderCalendar();
+    }
 
-  if (!username || !password) {
-    showToast("Username and password required.");
-    return;
-  }
+    /* ====================== DARK MODE ====================== */
+    function toggleDarkMode() {
+      darkMode = !darkMode;
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', darkMode);
+      document.getElementById('darkModeToggle').innerHTML = 
+        darkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    }
 
-  if (siteData.users.some(u => u.username === username)) {
-    showToast("User already exists.");
-    return;
-  }
-
-  siteData.users.push({
-    username: username,
-    password: password,
-    email: email || null,
-    role: role
-  });
-
-  saveData();
-  renderUsers();
-  showToast("User created.");
-}
-
-function bulkCreateUsers() {
-  const bulkText = document.getElementById('bulkUsers').value;
-  const entries = bulkText.split(',').map(e => e.trim());
-
-  for (let i = 0; i < entries.length; i += 4) {
-    const type = entries[i] || '';
-    const username = entries[i + 1] || '';
-    const password = entries[i + 2] || '';
-    const email = entries[i + 3] || '';
-
-    let role = 'student';
-    if (type === 'T') role = 'teacher';
-    if (type === 'A') role = 'admin';
-
-    if (!username || !password) continue;
-
-    siteData.users.push({
-      username: username,
-      password: password,
-      email: email || null,
-      role: role
-    });
-  }
-
-  saveData();
-  renderUsers();
-  showToast("Bulk users created.");
-}
-
-function submitBooking(event) {
-  event.preventDefault();
-
-  const date = document.getElementById('date').value;
-  const room = document.getElementById('roomSelect').value;
-  const period = document.getElementById('period').value;
-  const notes = document.getElementById('bookingNotes').value;
-
-  // Prevent double booking
-  const existing = siteData.bookings.find(b => b.date === date && b.room === room && b.period === period);
-  if (existing) {
-    showToast("Room already booked for that period.");
-    return;
-  }
-
-  const booking = {
-    id: generateId(),
-    date: date,
-    room: room,
-    period: period,
-    user: currentUser.username,
-    notes: notes,
-    status: 'approved'
-  };
-
-  siteData.bookings.push(booking);
-  saveData();
-  renderCalendar();
-  showToast("Booking created.");
-}
-
-function renderRooms() {
-  // TODO: Populate room dropdowns and room lists
-}
-
-function renderUsers() {
-  // TODO: Populate user list table
-}
-
-function renderCalendar() {
-  // TODO: Populate the calendar grid
-}
-
-function loadApp() {
-  renderRooms();
-  renderUsers();
-  renderCalendar();
-}
-
-function hideAnnouncement() {
-  document.getElementById('announcementBanner').classList.add('hidden');
-}
-
-function toggleDarkMode() {
-  document.body.classList.toggle('dark-mode');
-  darkMode = !darkMode;
-  localStorage.setItem('darkMode', darkMode);
-}
-</script>
+    /* ====================== INITIAL LOAD ====================== */
+    function loadApp() {
+      loadRooms();
+      loadUsers();
+      renderCalendar();
+    }
+  </script>
+</body>
 </html>
