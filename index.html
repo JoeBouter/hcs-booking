@@ -358,33 +358,6 @@
   </div>
 
   <script>
-        // Fixed Dark Mode Functions
-    let darkMode = localStorage.getItem('darkMode') === 'true';
-
-    function toggleDarkMode() {
-      darkMode = !darkMode;
-      localStorage.setItem('darkMode', darkMode.toString());
-      updateDarkMode();
-    }
-
-    function updateDarkMode() {
-      const html = document.documentElement;
-      const toggleBtn = document.getElementById('darkModeToggle');
-      
-      if (darkMode) {
-        html.classList.add('dark');
-        toggleBtn.innerHTML = '<i class="fas fa-sun text-white"></i>';
-      } else {
-        html.classList.remove('dark');
-        toggleBtn.innerHTML = '<i class="fas fa-moon text-white"></i>';
-      }
-    }
-
-    // Initialize dark mode on load
-    document.addEventListener('DOMContentLoaded', function() {
-      updateDarkMode(); // This line was missing before
-      // ... (rest of initialization code) ...
-    });
     // Dark Mode Management
     let darkMode = localStorage.getItem('darkMode') === 'true';
     
