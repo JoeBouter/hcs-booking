@@ -174,6 +174,9 @@
         width: 100%;
       }
     }
+  .calendar-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -912,6 +915,125 @@
     let selectedBooking = null;
     let selectedPeriod = null;
     let darkMode = false;
+	  /* ====================== PERIOD MANAGEMENT ====================== */
+function addPeriod() {
+    const name = document.getElementById('periodName').value.trim();
+    const start = document.getElementById('periodStart').value;
+    const end = document.getElementById('periodEnd').value;
+    
+    if (!name || !start || !end) {
+        showToast('Please fill in all period fields');
+        return;
+    }
+    
+    siteData.periods.push({ name, start, end });
+    saveData();
+    loadPeriods();
+    showToast('Period added successfully!');
+}
+
+function loadPeriods() {
+    const periodList = document.getElementById('periodList');
+    periodList.innerHTML = '';
+    
+    siteData.periods.forEach(period => {
+        const li = document.createElement('li');
+        li.className = 'bg-white p-2 rounded-md shadow-sm flex justify-between items-center dark:bg-gray-600';
+        li.innerHTML = `
+            <div>
+                <span class="font-medium">${period.name}</span>
+                <span class="text-sm text-gray-500 ml-2">${period.start} - ${period.end}</span>
+            </div>
+            <button onclick="deletePeriod('${period.name}')" class="text-red-600 hover:text-red-800">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        periodList.appendChild(li);
+    });
+}
+
+function deletePeriod(periodName) {
+    siteData.periods = siteData.periods.filter(p => p.name !== periodName);
+    saveData();
+    loadPeriods();
+    showToast('Period deleted successfully');
+}
+
+/* ====================== HOLIDAY MANAGEMENT ====================== */
+function addHoliday() {
+    const name = document.getElementById('holidayName').value.trim();
+    const date = document.getElementById('holidayDate').value;
+    
+    if (!name || !date) {
+        showToast('Please fill in all holiday fields');
+        return;
+    }
+    
+    siteData.holidays.push({ name, date });
+    saveData();
+    loadHolidays();
+    showToast('Holiday added successfully!');
+}
+
+function loadHolidays() {
+    const holidayList = document.getElementById('holidayList');
+    holidayList.innerHTML = '';
+    
+    siteData.holidays.forEach(holiday => {
+        const li = document.createElement('li');
+        li.className = 'bg-white p-2 rounded-md shadow-sm flex justify-between items-center dark:bg-gray-600';
+        li.innerHTML = `
+            <div>
+                <span class="font-medium">${holiday.name}</span>
+                <span class="text-sm text-gray-500 ml-2">${holiday.date}</span>
+            </div>
+            <button onclick="deleteHoliday('${holiday.date}')" class="text-red-600 hover:text-red-800">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        holidayList.appendChild(li);
+    });
+}
+
+function deleteHoliday(date) {
+    siteData.holidays = siteData.holidays.filter(h => h.date !== date);
+    saveData();
+    loadHolidays();
+    showToast('Holiday deleted successfully');
+}
+
+/* ====================== DATA EXPORT/IMPORT ====================== */
+function exportData() {
+    const dataStr = JSON.stringify(siteData);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'site-data-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Data exported successfully');
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            siteData = JSON.parse(e.target.result);
+            saveData();
+            loadApp();
+            showToast('Data imported successfully');
+        } catch (error) {
+            showToast('Invalid data file');
+        }
+    };
+    reader.readAsText(file);
+}
 
     /* ====================== INITIALIZATION ====================== */
     document.addEventListener('DOMContentLoaded', function() {
